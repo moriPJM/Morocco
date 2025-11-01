@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useRef } from 'react'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import { useTranslation } from 'react-i18next'
 import 'leaflet/dist/leaflet.css'
@@ -68,7 +68,7 @@ const Map = () => {
           />
           
           {moroccanCities.map((city, index) => (
-            <Marker key={index} position={city.position}>
+            <Marker key={index} position={city.position as [number, number]}>
               <Popup>
                 <div className="text-center">
                   <h3 className="font-bold text-lg">{city.name}</h3>

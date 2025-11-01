@@ -1,9 +1,10 @@
 # Morocco Travel App
 
-A React TypeScript web application for Morocco travel with automatic translation features and guide information.
+A React TypeScript web application for Morocco travel with automatic translation features and AI guide powered by Python Flask backend.
 
 ## Features
 
+- 🤖 **AI-Powered Guide**: OpenAI GPT-3.5 integration for intelligent travel advice
 - 🔤 **Real-time Translation**: Translate between Arabic, French, Berber, and English
 - 📖 **Comprehensive Guides**: Detailed information about Moroccan cities, culture, and cuisine  
 - 🗺️ **Interactive Maps**: Navigate Morocco with detailed maps and points of interest
@@ -14,107 +15,184 @@ A React TypeScript web application for Morocco travel with automatic translation
 ## Technology Stack
 
 - **Frontend**: React 18 with TypeScript
+- **Backend**: Python Flask with OpenAI API integration
 - **Styling**: Tailwind CSS with custom Morocco-themed colors
 - **Internationalization**: react-i18next
 - **Maps**: React Leaflet
 - **Build Tool**: Vite
-- **State Management**: Zustand
-
-## Project Structure
-
-```
-src/
-├── components/         # Reusable UI components
-│   └── Navigation.tsx  # Main navigation component
-├── pages/             # Page components
-│   ├── Home.tsx       # Landing page
-│   ├── Translator.tsx # Translation interface
-│   ├── Guides.tsx     # Travel guides
-│   ├── Map.tsx        # Interactive map
-│   └── Favorites.tsx  # User favorites
-├── i18n/              # Internationalization
-│   └── i18n.ts        # i18n configuration
-├── App.tsx            # Main app component
-├── main.tsx           # App entry point
-└── index.css          # Global styles
-```
+- **AI**: OpenAI GPT-3.5 Turbo
 
 ## Prerequisites
 
 Before running this project, you need to install:
 
-1. **Node.js** (version 16 or higher)
+1. **Python** (version 3.8 or higher)
+   - Download from: https://python.org/
+   - Verify installation: `python --version`
+
+2. **Node.js** (version 16 or higher)
    - Download from: https://nodejs.org/
    - Verify installation: `node --version`
 
-2. **npm** (comes with Node.js)
-   - Verify installation: `npm --version`
+3. **OpenAI API Key**
+   - Get your API key from: https://platform.openai.com/api-keys
+   - Add to `.env` file: `VITE_OPENAI_API_KEY=your_api_key_here`
 
-## Installation
+## Quick Start (Python)
 
-1. **Install dependencies**:
+### Option 1: Automatic Setup (Recommended)
+
+**Windows:**
+```bash
+start.bat
+```
+
+**Cross-platform:**
+```bash
+python start.py
+```
+
+This will automatically:
+- Install Python dependencies
+- Install Node.js dependencies  
+- Build the frontend
+- Start the Flask server on http://localhost:5000
+
+### Option 2: Manual Setup
+
+1. **Install Python dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. **Install Node.js dependencies:**
    ```bash
    npm install
    ```
 
-2. **Start development server**:
-   ```bash
-   npm run dev
-   ```
-
-3. **Build for production**:
+3. **Build the frontend:**
    ```bash
    npm run build
    ```
 
-## Development
+4. **Start the Python server:**
+   ```bash
+   python app.py
+   ```
 
-- **Development server**: `npm run dev` (runs on http://localhost:3000)
-- **Type checking**: `npm run lint`
-- **Production build**: `npm run build`
-- **Preview production build**: `npm run preview`
+5. **Access the app at:** http://localhost:5000
 
-## Morocco Travel Features
+## Development Mode
 
-### Translation Component
-- Support for Arabic, French, Berber (Tamazight), and English
-- Real-time text translation
-- Common phrases library
-- Right-to-left (RTL) text support for Arabic
+For development with hot reloading:
 
-### Travel Guides
-- **Cities**: Marrakech, Casablanca, Fez, Rabat, Chefchaouen, Essaouira
-- **Culture**: Berber heritage, Islamic art, traditional crafts
-- **Cuisine**: Tagine, mint tea, traditional recipes
-- **Practical Tips**: Currency, language, etiquette, best travel times
+1. **Start the Python backend:**
+   ```bash
+   python app.py
+   ```
 
-### Interactive Map
-- Major Moroccan cities with detailed information
-- Points of interest and attractions
-- Responsive map interface using Leaflet
+2. **In another terminal, start the frontend dev server:**
+   ```bash
+   npm run dev
+   ```
 
-### Favorites System
-- Save favorite places, phrases, and guides
-- Organized by categories
-- Quick access to saved content
+3. **Access frontend at:** http://localhost:3001
+4. **Backend API at:** http://localhost:5000/api
 
-## Styling
+## Project Structure
 
-The app uses Tailwind CSS with custom Morocco-themed colors:
+```
+├── app.py                 # Python Flask backend
+├── start.py              # Python startup script
+├── start.bat             # Windows batch startup
+├── requirements.txt      # Python dependencies
+├── .env                  # Environment variables (OpenAI API key)
+├── src/
+│   ├── components/       # React components
+│   │   ├── AIGuide.tsx   # AI chatbot component
+│   │   └── Navigation.tsx
+│   ├── pages/           # Page components
+│   │   ├── Home.tsx
+│   │   ├── Translator.tsx
+│   │   ├── Guides.tsx
+│   │   └── Map.tsx
+│   └── i18n/            # Internationalization
+├── public/              # Static assets
+├── dist/               # Built frontend (created after build)
+└── package.json        # Node.js dependencies
+```
 
-- **Morocco Red**: `#C1272D` (flag red)
-- **Morocco Green**: `#006233` (flag green)  
-- **Morocco Gold**: `#FFD700` (accent color)
-- **Morocco Sand**: `#F4A460` (desert theme)
-- **Morocco Blue**: `#4682B4` (Atlantic coast)
+## API Endpoints
 
-## Translation API
+The Flask backend provides the following endpoints:
 
-Currently uses mock translations for demonstration. In production, integrate with:
-- Google Translate API
-- Azure Translator
-- AWS Translate
-- Custom translation service
+- `GET /` - Serve React app
+- `POST /api/chat` - AI chat with OpenAI GPT-3.5
+- `GET /api/health` - Health check
+- `GET /<path>` - Static file serving
+
+## Environment Variables
+
+Create a `.env` file in the root directory:
+
+```env
+VITE_OPENAI_API_KEY=your_openai_api_key_here
+FLASK_ENV=development
+PORT=5000
+```
+
+## AI Guide Features
+
+The AI guide uses OpenAI GPT-3.5 Turbo to provide:
+
+- Expert advice on Moroccan tourism
+- Cultural insights and etiquette tips
+- Restaurant and accommodation recommendations
+- Safety and travel tips
+- Weather and seasonal advice
+- Language assistance
+
+## Deployment
+
+### Local Production
+
+```bash
+# Build frontend
+npm run build
+
+# Start production server
+python app.py
+```
+
+### Docker (Optional)
+
+```dockerfile
+FROM python:3.11
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+COPY . .
+RUN npm install && npm run build
+EXPOSE 5000
+CMD ["python", "app.py"]
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Port 5000 already in use:**
+   - Change PORT in .env file
+   - Or stop the conflicting process
+
+2. **OpenAI API errors:**
+   - Check your API key in .env
+   - Verify API key has sufficient credits
+   - Check internet connection
+
+3. **Build failures:**
+   - Delete `node_modules` and run `npm install`
+   - Clear npm cache: `npm cache clean --force`
 
 ## Contributing
 
@@ -127,18 +205,3 @@ Currently uses mock translations for demonstration. In production, integrate wit
 ## License
 
 This project is open source and available under the [MIT License](LICENSE).
-
-## Next Steps
-
-To enhance the application, consider adding:
-
-- Real translation API integration
-- Offline functionality with service workers
-- User authentication and personal favorites sync
-- Weather information for cities
-- Currency converter
-- Local events and festivals
-- Hotel and restaurant recommendations
-- Photo gallery for attractions
-- Audio pronunciation guides
-- GPS navigation integration

@@ -462,11 +462,11 @@ const Guides: React.FC = () => {
             <div className="space-y-8">
               {section.items.map((item, index) => (
                 <div key={index} className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
-                  {item.image ? (
+                  {(item as any).image ? (
                     <div className="md:flex">
                       <div className="md:w-1/3">
                         <img 
-                          src={item.image} 
+                          src={(item as any).image} 
                           alt={item.title}
                           className="w-full h-64 md:h-full object-cover"
                         />

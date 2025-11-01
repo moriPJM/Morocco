@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { useTranslation } from 'react-i18next'
 
 interface Message {
   id: string
@@ -9,7 +8,6 @@ interface Message {
 }
 
 const AIGuide: React.FC = () => {
-  const { t } = useTranslation()
   const [messages, setMessages] = useState<Message[]>([])
   const [inputText, setInputText] = useState('')
   const [isTyping, setIsTyping] = useState(false)
@@ -36,56 +34,29 @@ const AIGuide: React.FC = () => {
     scrollToBottom()
   }, [messages])
 
-  // OpenAI APIを使用したAI応答の取得
+  // Python バックエンドのAI APIを使用した応答の取得
   const getAIResponse = async (userInput: string): Promise<string> => {
-    const apiKey = import.meta.env.VITE_OPENAI_API_KEY
-    
-    if (!apiKey) {
-      return "申し訳ございませんが、AI機能を利用するにはAPIキーが必要です。"
-    }
-
     try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          model: 'gpt-3.5-turbo',
-          messages: [
-            {
-              role: 'system',
-              content: `あなたはモロッコ旅行の専門ガイドです。モロッコの観光地、文化、歴史、料理、言語、習慣、エチケット、交通、宿泊、買い物などについて、詳しく丁寧に日本語で回答してください。
-              
-              回答の特徴：
-              - 親しみやすく、実用的な情報を提供
-              - 具体的な場所名、料理名、文化的背景を含める
-              - 安全な旅行のためのアドバイスも含める
-              - 適切に絵文字を使用して読みやすくする
-              - 日本人旅行者の視点で回答する
-              - 回答は400文字程度に収める`
-            },
-            {
-              role: 'user',
-              content: userInput
-            }
-          ],
-          max_tokens: 500,
-          temperature: 0.7
+          message: userInput
         })
       })
 
       const data = await response.json()
       
-      if (data.error) {
-        return `エラーが発生しました: ${data.error.message}`
+      if (!response.ok) {
+        return `エラーが発生しました: ${data.error || 'サーバーエラー'}`
       }
       
-      return data.choices[0]?.message?.content || "申し訳ございませんが、回答を生成できませんでした。"
+      return data.response || "申し訳ございませんが、回答を生成できませんでした。"
     } catch (error) {
-      console.error('OpenAI API Error:', error)
-      return "ネットワークエラーが発生しました。インターネット接続を確認してください。"
+      console.error('API Error:', error)
+      return "ネットワークエラーが発生しました。サーバーとの接続を確認してください。"
     }
   }
 
@@ -145,7 +116,7 @@ const AIGuide: React.FC = () => {
     <div className="flex flex-col h-full bg-white rounded-lg shadow-lg">
       <div className="bg-morocco-red text-white p-4 rounded-t-lg">
         <h2 className="text-xl font-bold">🤖 モロッコAIガイド</h2>
-        <p className="text-sm opacity-90">モロッコ旅行の専門ガイドです (OpenAI GPT-3.5)</p>
+        <p className="text-sm opacity-90">モロッコ旅行の専門ガイドです (Python + OpenAI GPT-3.5)</p>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-96">
