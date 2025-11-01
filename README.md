@@ -1,11 +1,32 @@
 # Morocco Travel App
 
-A React TypeScript web application for Morocco travel with automatic translation features and AI guide powered by Python Flask backend.
+A React TypeScript web application for Morocco travel with comprehensive features including AI-powered guidance, advanced translation with speech synthesis, and beautiful interactive guides.
 
-## Features
+## ✨ Latest Features (November 2024)
+
+### 🎤 **Advanced Speech Features**
+- **Multi-language Speech Synthesis**: Japanese, English, Arabic text-to-speech
+- **Speech Recognition**: Voice input for translations
+- **Arabic Speech Support**: Specialized Arabic pronunciation with fallback options
+- **Interactive Phrase Cards**: Hover-activated speech buttons for common phrases
+
+### 🗣️ **Enhanced Translation System**
+- **Japanese Default**: Japanese as the primary language
+- **Contextual Phrases**: Situation-based conversation helpers
+- **6 Categories**: Greetings, gratitude, navigation, dining, shopping, emergencies
+- **Real-time Audio**: Instant pronunciation for all supported languages
+
+### 🎨 **Beautiful Guide Interface**
+- **Modern Card Layout**: Elegant, responsive design with gradients
+- **Quick Navigation**: Category-based browsing with smooth scrolling
+- **AI Integration**: Prominent AI guide placement with premium styling
+- **Visual Hierarchy**: Clear information structure with icons and colors
+
+## Core Features
 
 - 🤖 **AI-Powered Guide**: OpenAI GPT-3.5 integration for intelligent travel advice
-- 🔤 **Real-time Translation**: Translate between Arabic, French, Berber, and English
+- 🔤 **Real-time Translation**: Translate between Arabic, French, Berber, Japanese, and English
+- 🎵 **Speech Technology**: Advanced text-to-speech and speech recognition
 - 📖 **Comprehensive Guides**: Detailed information about Moroccan cities, culture, and cuisine  
 - 🗺️ **Interactive Maps**: Navigate Morocco with detailed maps and points of interest
 - ❤️ **Favorites**: Save your favorite places and information for quick access
@@ -102,24 +123,28 @@ For development with hot reloading:
 ## Project Structure
 
 ```
-├── app.py                 # Python Flask backend
-├── start.py              # Python startup script
-├── start.bat             # Windows batch startup
-├── requirements.txt      # Python dependencies
-├── .env                  # Environment variables (OpenAI API key)
+├── app.py                    # Python Flask backend
+├── start.py                  # Python startup script
+├── start.bat                 # Windows batch startup
+├── requirements.txt          # Python dependencies
+├── .env                      # Environment variables (OpenAI API key)
 ├── src/
-│   ├── components/       # React components
-│   │   ├── AIGuide.tsx   # AI chatbot component
+│   ├── components/           # React components
+│   │   ├── AIGuide.tsx       # AI chatbot component
+│   │   ├── SpeechControls.tsx # Speech synthesis/recognition
 │   │   └── Navigation.tsx
-│   ├── pages/           # Page components
+│   ├── pages/               # Page components
 │   │   ├── Home.tsx
-│   │   ├── Translator.tsx
-│   │   ├── Guides.tsx
+│   │   ├── Translator.tsx    # Enhanced with speech features
+│   │   ├── Guides.tsx        # Beautiful card-based layout
 │   │   └── Map.tsx
-│   └── i18n/            # Internationalization
-├── public/              # Static assets
-├── dist/               # Built frontend (created after build)
-└── package.json        # Node.js dependencies
+│   ├── utils/               # Utility functions
+│   │   └── speechUtils.ts    # Speech API utilities
+│   └── i18n/                # Internationalization
+├── public/                  # Static assets
+│   └── images/              # Morocco-themed images
+├── dist/                    # Built frontend (created after build)
+└── package.json             # Node.js dependencies
 ```
 
 ## API Endpoints
@@ -151,6 +176,47 @@ The AI guide uses OpenAI GPT-3.5 Turbo to provide:
 - Safety and travel tips
 - Weather and seasonal advice
 - Language assistance
+
+## 🎤 Speech Features
+
+### Supported Languages
+- **Japanese** (ja-JP): Default language with natural pronunciation
+- **English** (en-US): Clear American English pronunciation  
+- **Arabic** (ar-SA): Standard Arabic with fallback options
+- **Moroccan Arabic** (ar-MA): Dialect-specific pronunciation when available
+- **French** (fr-FR): Standard French pronunciation
+
+### Speech Controls
+- **🔊 Text-to-Speech**: Click speaker icons to hear pronunciations
+- **🎤 Speech Recognition**: Voice input for translation text
+- **🕌 Arabic Audio**: Specialized buttons for Arabic phrases
+- **🎌 Japanese Audio**: Native Japanese pronunciation
+- **📱 Mobile Optimized**: Touch-friendly speech controls
+
+### How to Use Speech Features
+1. Navigate to the **Translation** page
+2. Hover over phrase cards to reveal speech buttons
+3. Click language-specific icons for pronunciation:
+   - 🔊 English pronunciation
+   - 🎌 Japanese pronunciation  
+   - 🕌 Arabic pronunciation
+4. Use microphone button for voice input
+5. Check browser console for speech debugging information
+
+## 🎨 UI/UX Improvements
+
+### Modern Design Elements
+- **Gradient Backgrounds**: Morocco-themed color schemes
+- **Card-based Layout**: Clean, organized information display
+- **Hover Animations**: Interactive elements with smooth transitions
+- **Responsive Grid**: Adapts to all screen sizes
+- **Visual Hierarchy**: Clear information prioritization
+
+### Navigation Enhancements
+- **Quick Links**: Jump to specific guide sections
+- **Category Badges**: Visual indicators for content types
+- **Smooth Scrolling**: Seamless page navigation
+- **Mobile Menu**: Optimized mobile navigation
 
 ## Deployment
 
