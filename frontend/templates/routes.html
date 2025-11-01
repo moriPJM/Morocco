@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+
+{% block title %}おすすめルート - モロッコ観光ガイド{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2><i class="fas fa-route text-success"></i> モロッコおすすめ旅行ルート</h2>
+        <p class="lead">経験豊富なガイドが厳選した、モロッコの魅力を最大限に楽しめる旅行プランをご紹介します。</p>
+        
+        <!-- フィルター -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <label class="form-label">旅行期間</label>
+                        <select class="form-select" id="durationFilter" onchange="filterRoutes()">
+                            <option value="">すべての期間</option>
+                            <option value="3">3-4日間</option>
+                            <option value="7">7日間</option>
+                            <option value="10">10日間以上</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">難易度</label>
+                        <select class="form-select" id="difficultyFilter" onchange="filterRoutes()">
+                            <option value="">すべて</option>
+                            <option value="Easy">初心者向け</option>
+                            <option value="Medium">中級者向け</option>
+                            <option value="Hard">上級者向け</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">テーマ</label>
+                        <select class="form-select" id="themeFilter" onchange="filterRoutes()">
+                            <option value="">すべてのテーマ</option>
+                            <option value="culture">文化・歴史</option>
+                            <option value="nature">自然・アドベンチャー</option>
+                            <option value="gourmet">グルメ</option>
+                            <option value="relax">リラックス</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ルート一覧 -->
+        <div class="row" id="routesContainer">
+            <!-- 動的に読み込み -->
+        </div>
+    </div>
+</div>
+
+<!-- ルート詳細モーダル -->
+<div class="modal fade" id="routeDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="routeDetailTitle"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="routeDetailBody">
+                <!-- 詳細情報を動的に読み込み -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">閉じる</button>
+                <button type="button" class="btn btn-primary" id="customizeRouteBtn">プランをカスタマイズ</button>
+                <button type="button" class="btn btn-success" id="bookRouteBtn">このプランで予約相談</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// サンプルルートデータ
+const sampleRoutes = [
+    {
+        id: 1,
+        name: "王道モロッコ周遊7日間",
+        duration: 7,
+        difficulty: "Easy",
+        theme: "culture",
+        description: "初回訪問に最適！主要都市を効率よく巡る定番コース",
+        highlights: ["カサブランカ", "ラバト", "フェズ", "シャウエン", "マラケシュ"],
+        price: "150,000円〜",
+        image: "https://via.placeholder.com/300x200?text=Classic+Morocco+Tour",
+        itinerary: {
+            day1: "カサブランカ到着 - ハッサン2世モスク見学",
+            day2: "ラバト観光 - フェズへ移動",
+            day3: "フェズ旧市街散策 - 伝統工芸見学",
+            day4: "シャウエン観光 - 青い街散策",
+            day5: "マラケシュへ移動 - ジャマエルフナ広場",
+            day6: "マラケシュ市内観光 - マジョレル庭園",
+            day7: "カサブランカ経由で帰国"
+        }
+    },
+    {
+        id: 2,
+        name: "サハラ砂漠アドベンチャー4日間",
+        duration: 4,
+        difficulty: "Medium",
+        theme: "nature",
+        description: "ラクダトレッキングと星空キャンプで砂漠の魅力を満喫",
+        highlights: ["マラケシュ", "アイト・ベン・ハドゥ", "メルズーガ", "サハラ砂漠"],
+        price: "80,000円〜",
+        image: "https://via.placeholder.com/300x200?text=Sahara+Adventure",
+        itinerary: {
+            day1: "マラケシュ出発 - アイト・ベン・ハドゥ見学",
+            day2: "サハラ砂漠到着 - ラクダトレッキング開始",
+            day3: "砂漠キャンプ - 星空観察 - 日の出鑑賞",
+            day4: "マラケシュ帰着 - スーク散策"
+        }
+    },
+    {
+        id: 3,
+        name: "美食とリヤド満喫5日間",
+        duration: 5,
+        difficulty: "Easy",
+        theme: "gourmet",
+        description: "本格モロッコ料理と伝統的なリヤド宿泊を楽しむグルメ旅",
+        highlights: ["マラケシュ", "フェズ", "料理教室", "高級リヤド"],
+        price: "120,000円〜",
+        image: "https://via.placeholder.com/300x200?text=Gourmet+Morocco",
+        itinerary: {
+            day1: "マラケシュ到着 - リヤドチェックイン",
+            day2: "料理教室 - スパイス市場見学",
+            day3: "フェズへ移動 - 伝統レストラン",
+            day4: "フェズ観光 - 高級リヤド体験",
+            day5: "カサブランカ経由で帰国"
+        }
+    },
+    {
+        id: 4,
+        name: "ベルベル文化体験10日間",
+        duration: 10,
+        difficulty: "Hard",
+        theme: "culture",
+        description: "アトラス山脈のベルベル村とサハラ砂漠を巡る本格文化体験",
+        highlights: ["アトラス山脈", "ベルベル村", "サハラ砂漠", "伝統工芸"],
+        price: "200,000円〜",
+        image: "https://via.placeholder.com/300x200?text=Berber+Culture",
+        itinerary: {
+            day1: "カサブランカ到着",
+            day2: "マラケシュ - アトラス山脈へ",
+            day3: "ベルベル村ホームステイ",
+            day4: "トレッキング - 村巡り",
+            day5: "サハラ砂漠へ移動",
+            day6: "砂漠キャンプ体験",
+            day7: "フェズへ移動",
+            day8: "フェズ観光 - 工芸見学",
+            day9: "シャウエン観光",
+            day10: "カサブランカ経由帰国"
+        }
+    }
+];
+
+document.addEventListener('DOMContentLoaded', function() {
+    displayRoutes(sampleRoutes);
+});
+
+function displayRoutes(routes) {
+    const container = document.getElementById('routesContainer');
+    container.innerHTML = '';
+    
+    routes.forEach(route => {
+        const routeCard = `
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title">${route.name}</h5>
+                            <span class="badge bg-${getDifficultyColor(route.difficulty)}">${getDifficultyText(route.difficulty)}</span>
+                        </div>
+                        <p class="card-text">${route.description}</p>
+                        <div class="mb-3">
+                            <small class="text-muted">
+                                <i class="fas fa-calendar"></i> ${route.duration}日間 | 
+                                <i class="fas fa-tag"></i> ${route.theme} | 
+                                <i class="fas fa-yen-sign"></i> ${route.price}
+                            </small>
+                        </div>
+                        <div class="mb-3">
+                            <strong>ハイライト:</strong><br>
+                            ${route.highlights.map(h => `<span class="badge bg-light text-dark me-1">${h}</span>`).join('')}
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <button class="btn btn-outline-primary" onclick="viewRouteDetail(${route.id})">
+                                詳細を見る
+                            </button>
+                            <button class="btn btn-success" onclick="contactForBooking(${route.id})">
+                                予約相談
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        container.innerHTML += routeCard;
+    });
+}
+
+function getDifficultyColor(difficulty) {
+    switch(difficulty) {
+        case 'Easy': return 'success';
+        case 'Medium': return 'warning';
+        case 'Hard': return 'danger';
+        default: return 'secondary';
+    }
+}
+
+function getDifficultyText(difficulty) {
+    switch(difficulty) {
+        case 'Easy': return '初心者向け';
+        case 'Medium': return '中級者向け';
+        case 'Hard': return '上級者向け';
+        default: return difficulty;
+    }
+}
+
+function filterRoutes() {
+    const duration = document.getElementById('durationFilter').value;
+    const difficulty = document.getElementById('difficultyFilter').value;
+    const theme = document.getElementById('themeFilter').value;
+    
+    let filteredRoutes = sampleRoutes.filter(route => {
+        return (!duration || route.duration.toString().includes(duration)) &&
+               (!difficulty || route.difficulty === difficulty) &&
+               (!theme || route.theme === theme);
+    });
+    
+    displayRoutes(filteredRoutes);
+}
+
+function viewRouteDetail(routeId) {
+    const route = sampleRoutes.find(r => r.id === routeId);
+    if (!route) return;
+    
+    document.getElementById('routeDetailTitle').textContent = route.name;
+    
+    let itineraryHtml = '<h6>詳細行程</h6><div class="row">';
+    Object.entries(route.itinerary).forEach(([day, activity]) => {
+        itineraryHtml += `
+            <div class="col-md-6 mb-2">
+                <div class="border-start border-primary ps-3">
+                    <strong>${day.replace('day', '第').replace(/(\d+)/, '$1日目')}</strong><br>
+                    <small>${activity}</small>
+                </div>
+            </div>
+        `;
+    });
+    itineraryHtml += '</div>';
+    
+    document.getElementById('routeDetailBody').innerHTML = `
+        <div class="row">
+            <div class="col-md-8">
+                <p><strong>概要:</strong> ${route.description}</p>
+                <p><strong>期間:</strong> ${route.duration}日間</p>
+                <p><strong>難易度:</strong> ${getDifficultyText(route.difficulty)}</p>
+                <p><strong>料金目安:</strong> ${route.price}</p>
+                ${itineraryHtml}
+            </div>
+            <div class="col-md-4">
+                <img src="${route.image}" class="img-fluid rounded mb-3" alt="${route.name}">
+                <div class="alert alert-info">
+                    <small><i class="fas fa-info-circle"></i> 料金は2名様参加時の1名様料金です。シーズンにより変動します。</small>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    const modal = new bootstrap.Modal(document.getElementById('routeDetailModal'));
+    modal.show();
+}
+
+function contactForBooking(routeId) {
+    const route = sampleRoutes.find(r => r.id === routeId);
+    alert(`「${route.name}」の予約相談を承ります。\n\n実際のサービスでは、こちらから予約フォームや連絡先情報を表示します。`);
+}
+</script>
+{% endblock %}

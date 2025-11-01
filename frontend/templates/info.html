@@ -1,0 +1,663 @@
+{% extends "base.html" %}
+
+{% block title %}現地情報 - モロッコ観光ガイド{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2><i class="fas fa-info-circle text-info"></i> モロッコ現地情報</h2>
+        <p class="lead">モロッコ旅行に必要な実用的な現地情報をまとめました。安全で快適な旅行のためにご確認ください。</p>
+        
+        <!-- タブナビゲーション -->
+        <ul class="nav nav-tabs mb-4" id="infoTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="basic-tab" data-bs-toggle="tab" data-bs-target="#basic" type="button">
+                    <i class="fas fa-info"></i> 基本情報
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="money-tab" data-bs-toggle="tab" data-bs-target="#money" type="button">
+                    <i class="fas fa-coins"></i> 通貨・お金
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="transport-tab" data-bs-toggle="tab" data-bs-target="#transport" type="button">
+                    <i class="fas fa-bus"></i> 交通手段
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="culture-tab" data-bs-toggle="tab" data-bs-target="#culture" type="button">
+                    <i class="fas fa-mosque"></i> 文化・マナー
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="safety-tab" data-bs-toggle="tab" data-bs-target="#safety" type="button">
+                    <i class="fas fa-shield-alt"></i> 安全・治安
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="practical-tab" data-bs-toggle="tab" data-bs-target="#practical" type="button">
+                    <i class="fas fa-suitcase"></i> 実用情報
+                </button>
+            </li>
+        </ul>
+        
+        <!-- タブコンテンツ -->
+        <div class="tab-content" id="infoTabContent">
+            <!-- 基本情報 -->
+            <div class="tab-pane fade show active" id="basic" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5><i class="fas fa-flag"></i> 国家基本情報</h5>
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-sm">
+                                    <tr><td><strong>正式国名</strong></td><td>モロッコ王国</td></tr>
+                                    <tr><td><strong>首都</strong></td><td>ラバト</td></tr>
+                                    <tr><td><strong>最大都市</strong></td><td>カサブランカ</td></tr>
+                                    <tr><td><strong>人口</strong></td><td>約3,700万人</td></tr>
+                                    <tr><td><strong>面積</strong></td><td>44.6万km²（日本の約1.2倍）</td></tr>
+                                    <tr><td><strong>国王</strong></td><td>ムハンマド6世</td></tr>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5><i class="fas fa-language"></i> 言語</h5>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-unstyled">
+                                    <li><strong>公用語:</strong> アラビア語、ベルベル語（アマジグ語）</li>
+                                    <li><strong>ビジネス語:</strong> フランス語（旧宗主国）</li>
+                                    <li><strong>観光地:</strong> 英語も通じる</li>
+                                    <li><strong>簡単な挨拶:</strong>
+                                        <ul>
+                                            <li>السلام عليكم (アッサラーム・アライクム) - こんにちは</li>
+                                            <li>شكرا (シュクラン) - ありがとう</li>
+                                            <li>معذرة (マーズィーラ) - すみません</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5><i class="fas fa-thermometer-half"></i> 気候・季節</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <h6>春（3-5月）</h6>
+                                        <p class="small">気温15-25°C<br>花が咲き乱れる最高の季節</p>
+                                    </div>
+                                    <div class="col-6">
+                                        <h6>夏（6-8月）</h6>
+                                        <p class="small">気温25-45°C<br>内陸は酷暑、沿岸は涼しい</p>
+                                    </div>
+                                    <div class="col-6">
+                                        <h6>秋（9-11月）</h6>
+                                        <p class="small">気温20-30°C<br>観光に最適なシーズン</p>
+                                    </div>
+                                    <div class="col-6">
+                                        <h6>冬（12-2月）</h6>
+                                        <p class="small">気温5-20°C<br>雨季、山間部は雪</p>
+                                    </div>
+                                </div>
+                                <div class="alert alert-info mt-3">
+                                    <strong>ベストシーズン:</strong> 10月〜4月（特に3-4月、10-11月）
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5><i class="fas fa-clock"></i> 時差・営業時間</h5>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>時差:</strong> 日本より8時間遅れ（サマータイムなし）</p>
+                                <p><strong>営業時間:</strong></p>
+                                <ul class="list-unstyled">
+                                    <li><strong>銀行:</strong> 月-金 8:30-16:30</li>
+                                    <li><strong>商店:</strong> 9:00-12:00, 15:00-19:00</li>
+                                    <li><strong>スーク:</strong> 9:00-20:00（金曜は14:30から）</li>
+                                    <li><strong>レストラン:</strong> 12:00-15:00, 19:00-23:00</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 通貨・お金 -->
+            <div class="tab-pane fade" id="money" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5><i class="fas fa-money-bill"></i> 通貨情報</h5>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>通貨:</strong> モロッコ・ディルハム（MAD）</p>
+                                <p><strong>レート:</strong> 1ディルハム ≈ 15円（変動あり）</p>
+                                <p><strong>紙幣:</strong> 20, 50, 100, 200ディルハム</p>
+                                <p><strong>硬貨:</strong> 1, 2, 5, 10ディルハム、20, 50サンチーム</p>
+                                
+                                <h6 class="mt-3">両替</h6>
+                                <ul>
+                                    <li>空港、銀行、両替所で可能</li>
+                                    <li>ユーロ、ドル、円対応</li>
+                                    <li>レシート保管必須（再両替時必要）</li>
+                                    <li>闇両替は避ける</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5><i class="fas fa-heart"></i> チップ文化</h5>
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-sm">
+                                    <tr><td>レストラン</td><td>10-15%</td></tr>
+                                    <tr><td>ホテル（ポーター）</td><td>10-20ディルハム</td></tr>
+                                    <tr><td>ホテル（清掃）</td><td>20-50ディルハム/泊</td></tr>
+                                    <tr><td>タクシー</td><td>端数切り上げ</td></tr>
+                                    <tr><td>ガイド</td><td>50-100ディルハム/日</td></tr>
+                                    <tr><td>トイレ</td><td>2-5ディルハム</td></tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5><i class="fas fa-credit-card"></i> 支払い方法</h5>
+                            </div>
+                            <div class="card-body">
+                                <h6>クレジットカード</h6>
+                                <ul>
+                                    <li>主要ホテル・レストランで利用可</li>
+                                    <li>Visa、MasterCard普及</li>
+                                    <li>スーク・屋台は現金のみ</li>
+                                    <li>手数料3-5%かかる場合あり</li>
+                                </ul>
+                                
+                                <h6>ATM</h6>
+                                <ul>
+                                    <li>主要都市に多数設置</li>
+                                    <li>24時間利用可能</li>
+                                    <li>手数料：200-300円/回</li>
+                                    <li>1日限度額：2,000ディルハム</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5><i class="fas fa-calculator"></i> 予算目安（1日）</h5>
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>カテゴリー</th>
+                                            <th>予算（ディルハム）</th>
+                                            <th>日本円換算</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>バックパッカー</td>
+                                            <td>300-500</td>
+                                            <td>4,500-7,500円</td>
+                                        </tr>
+                                        <tr>
+                                            <td>中級</td>
+                                            <td>800-1,200</td>
+                                            <td>12,000-18,000円</td>
+                                        </tr>
+                                        <tr>
+                                            <td>高級</td>
+                                            <td>1,500+</td>
+                                            <td>22,500円+</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 交通手段 -->
+            <div class="tab-pane fade" id="transport" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5><i class="fas fa-train"></i> 鉄道（ONCF）</h5>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>主要路線:</strong></p>
+                                <ul>
+                                    <li>カサブランカ ⇔ マラケシュ（3時間）</li>
+                                    <li>カサブランカ ⇔ フェズ（4時間）</li>
+                                    <li>カサブランカ ⇔ タンジェ（TGV 2時間）</li>
+                                </ul>
+                                <p><strong>料金例:</strong> カサブランカ-マラケシュ 80-150ディルハム</p>
+                                <p><strong>予約:</strong> 駅窓口、オンライン可能</p>
+                                <div class="alert alert-success">
+                                    <small><i class="fas fa-thumbs-up"></i> 快適で時間通り、おすすめの移動手段！</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5><i class="fas fa-bus"></i> 長距離バス</h5>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>主要会社:</strong></p>
+                                <ul>
+                                    <li><strong>CTM:</strong> 高品質、エアコン付き</li>
+                                    <li><strong>スプラツアーズ:</strong> 格安、本数多い</li>
+                                </ul>
+                                <p><strong>特徴:</strong></p>
+                                <ul>
+                                    <li>鉄道の通らない地域へのアクセス</li>
+                                    <li>シャウエン、ザゴラなど</li>
+                                    <li>料金は鉄道の半額程度</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5><i class="fas fa-taxi"></i> タクシー</h5>
+                            </div>
+                            <div class="card-body">
+                                <h6>プチタクシー（市内）</h6>
+                                <ul>
+                                    <li>メーター制（料金交渉不要）</li>
+                                    <li>初乗り：2-3ディルハム</li>
+                                    <li>最大3名まで</li>
+                                    <li>市境を越えられない</li>
+                                </ul>
+                                
+                                <h6>グランタクシー（都市間）</h6>
+                                <ul>
+                                    <li>相乗りが基本（6名）</li>
+                                    <li>貸切可能（6倍料金）</li>
+                                    <li>決まったルートのみ</li>
+                                    <li>満員になるまで出発しない</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5><i class="fas fa-car"></i> その他の交通手段</h5>
+                            </div>
+                            <div class="card-body">
+                                <h6>レンタカー</h6>
+                                <ul>
+                                    <li>国際免許証必要</li>
+                                    <li>25歳以上、運転歴1年以上</li>
+                                    <li>料金：300-800ディルハム/日</li>
+                                    <li>都市部は運転困難</li>
+                                </ul>
+                                
+                                <h6>配車アプリ</h6>
+                                <ul>
+                                    <li><strong>Careem:</strong> カサブランカ、ラバト</li>
+                                    <li><strong>InDriver:</strong> 料金交渉型</li>
+                                    <li>安全で便利</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 文化・マナー -->
+            <div class="tab-pane fade" id="culture" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5><i class="fas fa-mosque"></i> イスラム文化</h5>
+                            </div>
+                            <div class="card-body">
+                                <h6>基本的な配慮</h6>
+                                <ul>
+                                    <li>1日5回の礼拝時間を尊重</li>
+                                    <li>金曜日は聖なる日（午後休業多い）</li>
+                                    <li>ラマダン月は日中の飲食に配慮</li>
+                                    <li>豚肉・アルコールは一般的でない</li>
+                                </ul>
+                                
+                                <h6>モスク見学</h6>
+                                <ul>
+                                    <li>非ムスリムは内部立入禁止が多い</li>
+                                    <li>ハッサン2世モスク（カサブランカ）は見学可</li>
+                                    <li>外観撮影は基本的にOK</li>
+                                    <li>礼拝中の撮影は避ける</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5><i class="fas fa-tshirt"></i> 服装マナー</h5>
+                            </div>
+                            <div class="card-body">
+                                <h6>男性</h6>
+                                <ul>
+                                    <li>短パン・タンクトップは避ける</li>
+                                    <li>モスク見学時は長袖・長ズボン</li>
+                                </ul>
+                                
+                                <h6>女性</h6>
+                                <ul>
+                                    <li>肩・膝を隠す服装推奨</li>
+                                    <li>胸元が開いた服は避ける</li>
+                                    <li>ヘッドスカーフは必須ではない</li>
+                                    <li>モスク見学時は髪を覆う</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5><i class="fas fa-handshake"></i> 社交マナー</h5>
+                            </div>
+                            <div class="card-body">
+                                <h6>挨拶・交流</h6>
+                                <ul>
+                                    <li>右手で握手（左手は不浄とされる）</li>
+                                    <li>親しくなると頬へのキス（同性間）</li>
+                                    <li>異性との接触は控えめに</li>
+                                    <li>靴を脱いで家に上がる</li>
+                                </ul>
+                                
+                                <h6>写真撮影</h6>
+                                <ul>
+                                    <li>人物撮影は必ず許可を得る</li>
+                                    <li>女性の撮影は特に注意</li>
+                                    <li>軍事施設・警察は撮影禁止</li>
+                                    <li>チップを求められる場合あり</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5><i class="fas fa-shopping-bag"></i> 買い物マナー</h5>
+                            </div>
+                            <div class="card-body">
+                                <h6>価格交渉</h6>
+                                <ul>
+                                    <li>スークでは交渉が基本</li>
+                                    <li>最初の価格の1/3から開始</li>
+                                    <li>笑顔で楽しく交渉</li>
+                                    <li>買う意思がなければ深追いしない</li>
+                                </ul>
+                                
+                                <div class="alert alert-warning">
+                                    <small><i class="fas fa-exclamation-triangle"></i> しつこい客引きには「La, shukran」（いいえ、ありがとう）と毅然と対応</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 安全・治安 -->
+            <div class="tab-pane fade" id="safety" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5><i class="fas fa-shield-alt"></i> 治安状況</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-success">
+                                    <strong>全体的に安全:</strong> 重大犯罪は少なく、観光地は比較的安全です。
+                                </div>
+                                
+                                <h6>注意すべき軽犯罪</h6>
+                                <ul>
+                                    <li><strong>スリ・置き引き:</strong> 混雑した場所で注意</li>
+                                    <li><strong>ぼったくり:</strong> 観光客価格に注意</li>
+                                    <li><strong>偽ガイド:</strong> 公認ガイド以外は注意</li>
+                                    <li><strong>客引き:</strong> しつこい勧誘</li>
+                                </ul>
+                                
+                                <h6>避けるべき地域・時間</h6>
+                                <ul>
+                                    <li>夜間の旧市街裏通り</li>
+                                    <li>人気のない郊外エリア</li>
+                                    <li>国境地域（特にアルジェリア）</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5><i class="fas fa-female"></i> 女性旅行者へのアドバイス</h5>
+                            </div>
+                            <div class="card-body">
+                                <ul>
+                                    <li>保守的な服装を心がける</li>
+                                    <li>夜間の単独行動は避ける</li>
+                                    <li>グループ行動推奨</li>
+                                    <li>ナンパには毅然と対応</li>
+                                    <li>リヤド宿泊がおすすめ</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5><i class="fas fa-phone"></i> 緊急連絡先</h5>
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-sm">
+                                    <tr><td><strong>警察</strong></td><td><span class="badge bg-danger">19</span></td></tr>
+                                    <tr><td><strong>消防</strong></td><td><span class="badge bg-danger">15</span></td></tr>
+                                    <tr><td><strong>救急</strong></td><td><span class="badge bg-danger">141</span></td></tr>
+                                    <tr><td><strong>観光警察</strong></td><td>0537-20-94-94</td></tr>
+                                </table>
+                                
+                                <h6 class="mt-3">在モロッコ日本国大使館</h6>
+                                <address>
+                                    <strong>住所:</strong> 39 Avenue Ahmed Balafrej, Souissi, Rabat<br>
+                                    <strong>電話:</strong> +212-537-63-17-82<br>
+                                    <strong>緊急:</strong> +212-661-40-09-96
+                                </address>
+                            </div>
+                        </div>
+                        
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5><i class="fas fa-first-aid"></i> 健康・医療</h5>
+                            </div>
+                            <div class="card-body">
+                                <h6>予防接種</h6>
+                                <ul>
+                                    <li>特に必要な予防接種なし</li>
+                                    <li>A型肝炎・腸チフス推奨</li>
+                                    <li>長期滞在はその他も検討</li>
+                                </ul>
+                                
+                                <h6>健康管理</h6>
+                                <ul>
+                                    <li>水道水は避ける（ボトル水推奨）</li>
+                                    <li>生野菜・氷に注意</li>
+                                    <li>日焼け対策必須</li>
+                                    <li>急激な気温変化に注意</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 実用情報 -->
+            <div class="tab-pane fade" id="practical" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5><i class="fas fa-plug"></i> 電気・通信</h5>
+                            </div>
+                            <div class="card-body">
+                                <h6>電気</h6>
+                                <ul>
+                                    <li><strong>電圧:</strong> 220V</li>
+                                    <li><strong>プラグ:</strong> C型・E型（変換プラグ必要）</li>
+                                    <li><strong>周波数:</strong> 50Hz</li>
+                                </ul>
+                                
+                                <h6>インターネット・通信</h6>
+                                <ul>
+                                    <li><strong>WiFi:</strong> ホテル・カフェで利用可能</li>
+                                    <li><strong>SIMカード:</strong> Maroc Telecom、Orange、inwi</li>
+                                    <li><strong>料金:</strong> 100ディルハム〜（1GB）</li>
+                                    <li><strong>ローミング:</strong> 高額のため現地SIM推奨</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5><i class="fas fa-suitcase"></i> 荷物・持ち物</h5>
+                            </div>
+                            <div class="card-body">
+                                <h6>必携アイテム</h6>
+                                <ul>
+                                    <li>パスポート（6ヶ月以上有効）</li>
+                                    <li>変換プラグ（C型・E型）</li>
+                                    <li>日焼け止め（SPF50+推奨）</li>
+                                    <li>帽子・サングラス</li>
+                                    <li>薄手の長袖（日焼け・モスク対策）</li>
+                                </ul>
+                                
+                                <h6>季節別追加アイテム</h6>
+                                <ul>
+                                    <li><strong>夏:</strong> 日傘、冷却タオル</li>
+                                    <li><strong>冬:</strong> 防寒具、雨具</li>
+                                    <li><strong>砂漠:</strong> 砂嵐対策スカーフ</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5><i class="fas fa-passport"></i> 入国・ビザ</h5>
+                            </div>
+                            <div class="card-body">
+                                <h6>日本人の入国条件</h6>
+                                <ul>
+                                    <li><strong>ビザ:</strong> 90日以内の観光は不要</li>
+                                    <li><strong>パスポート:</strong> 入国時6ヶ月以上有効</li>
+                                    <li><strong>航空券:</strong> 往復または第三国行き</li>
+                                </ul>
+                                
+                                <h6>税関・制限</h6>
+                                <ul>
+                                    <li><strong>酒類:</strong> 1リットルまで</li>
+                                    <li><strong>タバコ:</strong> 200本または葉巻50本</li>
+                                    <li><strong>現金:</strong> 100,000ディルハム以上要申告</li>
+                                    <li><strong>禁止品:</strong> 豚製品、宗教的書物など</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5><i class="fas fa-shopping-cart"></i> お土産・ショッピング</h5>
+                            </div>
+                            <div class="card-body">
+                                <h6>人気のお土産</h6>
+                                <ul>
+                                    <li><strong>アルガンオイル:</strong> 50-200ディルハム</li>
+                                    <li><strong>革製品:</strong> バブーシュ 50-150ディルハム</li>
+                                    <li><strong>絨毯・キリム:</strong> 500-5000ディルハム</li>
+                                    <li><strong>陶器:</strong> タジン鍋 100-300ディルハム</li>
+                                    <li><strong>スパイス:</strong> サフラン 20-50ディルハム/g</li>
+                                </ul>
+                                
+                                <div class="alert alert-info">
+                                    <small><i class="fas fa-lightbulb"></i> 免税店・協同組合での購入が品質・価格ともに安心</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // タブ切り替え時のアニメーション
+    const tabs = document.querySelectorAll('#infoTabs button');
+    tabs.forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function(e) {
+            const targetPane = document.querySelector(e.target.getAttribute('data-bs-target'));
+            targetPane.style.animation = 'fadeIn 0.3s ease-in';
+        });
+    });
+});
+</script>
+
+<style>
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.badge {
+    font-size: 0.9em;
+}
+
+.alert {
+    border-left: 4px solid;
+}
+
+.alert-success {
+    border-left-color: #28a745;
+}
+
+.alert-info {
+    border-left-color: #17a2b8;
+}
+
+.alert-warning {
+    border-left-color: #ffc107;
+}
+</style>
+{% endblock %}

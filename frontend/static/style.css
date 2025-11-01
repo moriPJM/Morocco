@@ -1,0 +1,297 @@
+/* モロッコ観光ガイドアプリ - カスタムスタイル */
+
+/* ヒーローセクション */
+.hero-section {
+    background-color: #e74c3c !important; /* フォールバック色 */
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 50%, #8e44ad 100%) !important;
+    min-height: 300px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    border-radius: 15px !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2) !important;
+    color: white !important;
+    position: relative;
+}
+
+.hero-section * {
+    color: white !important;
+}
+
+.hero-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #e74c3c; /* フォールバック色 */
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 50%, #8e44ad 100%);
+    border-radius: 15px;
+    z-index: 1;
+}
+
+.hero-section > * {
+    position: relative;
+    z-index: 2;
+    color: white !important;
+}
+
+.hero-section h1 {
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3) !important;
+    color: white !important;
+    font-weight: bold !important;
+}
+
+.hero-section p {
+    color: white !important;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.2) !important;
+}
+
+.hero-section .input-group {
+    border-radius: 50px;
+    overflow: hidden;
+    z-index: 2;
+}
+
+.hero-section .form-control {
+    border-radius: 50px 0 0 50px !important;
+    padding: 15px 20px;
+    color: #333 !important;
+    background-color: white !important;
+}
+
+.hero-section .btn {
+    border-radius: 0 50px 50px 0 !important;
+    font-weight: 600;
+    color: white !important;
+    background-color: #f39c12 !important;
+}
+
+/* カテゴリーカード */
+.category-card {
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border-radius: 12px !important;
+    background-color: white !important;
+    color: #333 !important;
+}
+
+.category-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+    border-color: transparent !important;
+}
+
+.category-card .card-body {
+    border-radius: 12px;
+    transition: background-color 0.3s ease;
+    color: #333 !important;
+}
+
+.category-card h6 {
+    color: #333 !important;
+}
+
+.category-card .text-muted {
+    color: #6c757d !important;
+}
+
+.category-card:hover .card-body {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    color: #333 !important;
+}
+
+.category-card i {
+    transition: transform 0.3s ease;
+}
+
+.category-card:hover i {
+    transform: scale(1.1);
+}
+
+/* カード全般 */
+.card {
+    border-radius: 12px !important;
+    transition: box-shadow 0.3s ease;
+    background-color: white !important;
+    color: #333 !important;
+}
+
+.card:hover {
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1) !important;
+}
+
+.card-header {
+    border-radius: 12px 12px 0 0 !important;
+    font-weight: 600;
+    background-color: white !important;
+    color: #333 !important;
+}
+
+.card-body {
+    color: #333 !important;
+}
+
+.card-title {
+    color: #333 !important;
+}
+
+.card-text {
+    color: #333 !important;
+}
+
+/* ボタンスタイル */
+.btn {
+    border-radius: 8px !important;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-lg {
+    padding: 12px 24px;
+    font-size: 1rem;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    border: none;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #2980b9, #1f4e79);
+    transform: translateY(-1px);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #27ae60, #229954);
+    border: none;
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #229954, #1e8449);
+    transform: translateY(-1px);
+}
+
+.btn-info {
+    background: linear-gradient(135deg, #17a2b8, #138496);
+    border: none;
+}
+
+.btn-info:hover {
+    background: linear-gradient(135deg, #138496, #0f6674);
+    transform: translateY(-1px);
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    border: none;
+    color: white;
+}
+
+.btn-warning:hover {
+    background: linear-gradient(135deg, #e67e22, #d35400);
+    transform: translateY(-1px);
+    color: white;
+}
+
+/* レスポンシブデザイン */
+@media (max-width: 768px) {
+    .hero-section {
+        min-height: 250px;
+        padding: 2rem !important;
+    }
+    
+    .hero-section h1 {
+        font-size: 2rem !important;
+    }
+    
+    .hero-section .lead {
+        font-size: 1rem !important;
+    }
+    
+    .category-card .card-body {
+        padding: 1.5rem !important;
+    }
+    
+    .category-card i {
+        font-size: 2rem !important;
+    }
+}
+
+/* アニメーション */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card {
+    animation: fadeInUp 0.6s ease forwards;
+}
+
+.category-card:nth-child(1) { animation-delay: 0.1s; }
+.category-card:nth-child(2) { animation-delay: 0.2s; }
+.category-card:nth-child(3) { animation-delay: 0.3s; }
+.category-card:nth-child(4) { animation-delay: 0.4s; }
+
+/* テキストスタイル */
+body {
+    color: #333 !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: #333 !important;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
+.text-secondary {
+    color: #6c757d !important;
+}
+
+.fw-bold {
+    font-weight: 600 !important;
+}
+
+.small {
+    font-size: 0.875rem !important;
+}
+
+/* スペーシング */
+.g-3 > * {
+    padding: 0.75rem !important;
+}
+
+/* モーダル */
+.modal-content {
+    border-radius: 15px !important;
+    border: none;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+
+.modal-header {
+    border-radius: 15px 15px 0 0 !important;
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* カスタムアイコンサイズ */
+.fa-3x {
+    font-size: 2.5rem !important;
+}
+
+/* ユーティリティ */
+.shadow-sm {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+.border-0 {
+    border: none !important;
+}

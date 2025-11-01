@@ -18,4 +18,8 @@ def init_db(app):
     
     with app.app_context():
         db.create_all()
-        print("✅ データベースが初期化されました")
+        try:
+            # サンプルデータの追加処理
+            print("[OK] Database initialized successfully.")
+        except Exception as e:
+            print(f"[ERROR] Database initialization error: {e}")
