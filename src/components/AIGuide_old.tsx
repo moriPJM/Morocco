@@ -20,7 +20,7 @@ const AIGuide: React.FC = () => {
   useEffect(() => {
     const welcomeMessage: Message = {
       id: '1',
-      text: 'こんにちは！モロッコAIガイドです。OpenAI GPT-3.5を使用して、モロッコの観光地、文化、料理、エチケットなど、何でもお気軽にお尋ねください。🇲🇦',
+      text: 'こんにちは！モロッコAIガイドです。モロッコの観光地、文化、料理、エチケットなど、何でもお気軽にお尋ねください。🇲🇦',
       isUser: false,
       timestamp: new Date()
     }
@@ -63,8 +63,7 @@ const AIGuide: React.FC = () => {
               - 具体的な場所名、料理名、文化的背景を含める
               - 安全な旅行のためのアドバイスも含める
               - 適切に絵文字を使用して読みやすくする
-              - 日本人旅行者の視点で回答する
-              - 回答は400文字程度に収める`
+              - 日本人旅行者の視点で回答する`
             },
             {
               role: 'user',
@@ -132,8 +131,73 @@ const AIGuide: React.FC = () => {
       setIsLoading(false)
     }
   }
+• バス - CTM、スプラトゥールが大手会社
+• レンタカー - 国際免許証が必要
 
-  // Enterキーでメッセージ送信
+タクシーはメーターを使ってもらうか、事前に料金交渉しましょう！`
+    }
+
+    // 言語に関する質問
+    if (input.includes('言語') || input.includes('アラビア語') || input.includes('フランス語')) {
+      return `モロッコは多言語国家です！🗣️
+
+公用語：
+• アラビア語（古典・モロッコ方言）
+• ベルベル語（タマジット語）
+
+広く使われる言語：
+• フランス語 - 旧宗主国の影響で広く通用
+• 英語 - 観光地では通じることが多い
+• スペイン語 - 北部地域で使用
+
+基本的な挨拶：
+• こんにちは - アッサラーム・アライクム
+• ありがとう - シュクラン
+• はい - ナアム / ワハー`
+    }
+
+    // デフォルトの応答
+    return `ご質問ありがとうございます！🙏
+
+モロッコについて、以下のトピックでお答えできます：
+• 観光地（マラケシュ、カサブランカ、フェズなど）
+• 料理とグルメ
+• 文化とエチケット
+• お買い物とお土産
+• 天気と気候
+• 交通手段
+• 言語について
+
+具体的に何についてお知りになりたいですか？お気軽にお尋ねください！`
+  }
+
+  const handleSendMessage = () => {
+    if (!inputText.trim()) return
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      text: inputText,
+      isUser: true,
+      timestamp: new Date()
+    }
+
+    setMessages(prev => [...prev, userMessage])
+    setInputText('')
+    setIsTyping(true)
+
+    // AIの応答をシミュレート（少し遅延を入れて自然に）
+    setTimeout(() => {
+      const aiResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        text: getAIResponse(inputText),
+        isUser: false,
+        timestamp: new Date()
+      }
+      setMessages(prev => [...prev, aiResponse])
+      setIsTyping(false)
+    }, 1500)
+  }
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
@@ -142,13 +206,18 @@ const AIGuide: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-lg shadow-lg">
+    <div className="bg-white rounded-lg shadow-lg h-96 flex flex-col">
+      {/* ヘッダー */}
       <div className="bg-morocco-red text-white p-4 rounded-t-lg">
-        <h2 className="text-xl font-bold">🤖 モロッコAIガイド</h2>
-        <p className="text-sm opacity-90">モロッコ旅行の専門ガイドです (OpenAI GPT-3.5)</p>
+        <h3 className="font-semibold flex items-center">
+          <span className="mr-2">🤖</span>
+          モロッコAIガイド
+        </h3>
+        <p className="text-sm opacity-90">何でもお気軽にお尋ねください</p>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-96">
+      {/* メッセージエリア */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((message) => (
           <div
             key={message.id}
@@ -157,13 +226,16 @@ const AIGuide: React.FC = () => {
             <div
               className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
                 message.isUser
-                  ? 'bg-morocco-green text-white'
-                  : 'bg-gray-100 text-gray-900'
+                  ? 'bg-morocco-gold text-white'
+                  : 'bg-gray-100 text-gray-800'
               }`}
             >
-              <p className="whitespace-pre-wrap">{message.text}</p>
+              <p className="whitespace-pre-line">{message.text}</p>
               <p className="text-xs opacity-70 mt-1">
-                {message.timestamp.toLocaleTimeString()}
+                {message.timestamp.toLocaleTimeString('ja-JP', {
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
               </p>
             </div>
           </div>
@@ -171,19 +243,19 @@ const AIGuide: React.FC = () => {
         
         {isTyping && (
           <div className="flex justify-start">
-            <div className="bg-gray-100 text-gray-900 px-4 py-2 rounded-lg max-w-xs">
+            <div className="bg-gray-100 text-gray-800 px-4 py-2 rounded-lg">
               <div className="flex space-x-1">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
               </div>
             </div>
           </div>
         )}
-        
         <div ref={messagesEndRef} />
       </div>
 
+      {/* 入力エリア */}
       <div className="border-t p-4">
         <div className="flex space-x-2">
           <input
@@ -191,16 +263,16 @@ const AIGuide: React.FC = () => {
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="モロッコについて何でもお聞きください..."
+            placeholder="モロッコについて質問してください..."
             className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-morocco-red"
-            disabled={isLoading}
+            disabled={isTyping}
           />
           <button
             onClick={handleSendMessage}
-            disabled={!inputText.trim() || isLoading}
-            className="bg-morocco-red text-white px-4 py-2 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-morocco-red disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!inputText.trim() || isTyping}
+            className="bg-morocco-red text-white px-4 py-2 rounded-lg hover:bg-opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? '📡' : '送信'}
+            送信
           </button>
         </div>
       </div>
