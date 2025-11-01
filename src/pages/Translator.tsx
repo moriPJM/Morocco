@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import SpeechControls from '../components/SpeechControls'
+import { speakText, languageSettings, speakArabic, speakMoroccanArabic } from '../utils/speechUtils'
 
 const Translator = () => {
   const { t } = useTranslation()
   const [sourceText, setSourceText] = useState('')
   const [translatedText, setTranslatedText] = useState('')
-  const [sourceLang, setSourceLang] = useState('en')
-  const [targetLang, setTargetLang] = useState('ar')
+  const [sourceLang, setSourceLang] = useState('ja')
+  const [targetLang, setTargetLang] = useState('en')
   const [isTranslating, setIsTranslating] = useState(false)
 
   const languages = [
@@ -66,6 +68,24 @@ const Translator = () => {
         'ar': 'مرحباً بكم في المغرب',
         'fr': 'bienvenue au maroc',
         'ber': 'anṛḥeb s lmeɣrib'
+      },
+      'どこですか？': {
+        'en': 'where is',
+        'ar': 'أين',
+        'fr': 'où est',
+        'ber': 'anda'
+      },
+      'いくらですか？': {
+        'en': 'how much does it cost',
+        'ar': 'كم الثمن',
+        'fr': 'combien ça coûte',
+        'ber': 'mnšḥal'
+      },
+      '助けて': {
+        'en': 'help',
+        'ar': 'مساعدة',
+        'fr': 'aide',
+        'ber': 'ɛawn'
       }
     }
 
@@ -84,6 +104,40 @@ const Translator = () => {
     setTranslatedText(sourceText)
   }
 
+  const speakPhrase = async (text: string, language: string) => {
+    try {
+      console.log(`フレーズ音声再生: "${text}" (言語: ${language})`);
+      
+      // アラビア語の場合は専用関数を使用
+      if (language === 'ar') {
+        console.log('アラビア語専用関数を使用');
+        await speakArabic(text);
+        return;
+      }
+      
+      // モロッコアラビア語（ベルベル語代替）の場合
+      if (language === 'ber') {
+        console.log('モロッコアラビア語専用関数を使用');
+        await speakMoroccanArabic(text);
+        return;
+      }
+      
+      // その他の言語は従来通り
+      const langSettings = languageSettings[language as keyof typeof languageSettings];
+      if (langSettings) {
+        console.log(`標準音声関数を使用: ${langSettings.code}`);
+        await speakText(text, {
+          lang: langSettings.code,
+          rate: langSettings.rate,
+          pitch: langSettings.pitch,
+          volume: 1.0
+        });
+      }
+    } catch (error) {
+      console.error('音声再生エラー:', error);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -96,6 +150,22 @@ const Translator = () => {
             <p className="text-sm text-blue-800">
               💡 <strong>使い方:</strong> 翻訳したいテキストを入力して「翻訳する」ボタンを押してください。
               よく使うフレーズは下のボタンから選択できます。
+            </p>
+            <p className="text-sm text-blue-700 mt-2">
+              🎤 <strong>音声機能:</strong> 
+              <span className="inline-flex items-center mx-1">
+                <svg className="w-3 h-3 text-blue-500 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.816L4.88 14H2a1 1 0 01-1-1V7a1 1 0 011-1h2.88l3.503-2.816a1 1 0 011.617.816zM8 5.04L5.953 6.71A1 1 0 015.382 7H3v6h2.382a1 1 0 01.571.29L8 14.96V5.04z" clipRule="evenodd" />
+                </svg>
+                読み上げ
+              </span>
+              <span className="inline-flex items-center mx-1">
+                <svg className="w-3 h-3 text-green-500 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
+                </svg>
+                音声入力
+              </span>
+              で簡単に操作できます。
             </p>
           </div>
         </div>
@@ -149,6 +219,17 @@ const Translator = () => {
           {/* Translation Interface */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium text-gray-700">
+                  入力テキスト
+                </label>
+                <SpeechControls
+                  text={sourceText}
+                  language={sourceLang}
+                  onSpeechResult={(text) => setSourceText(text)}
+                  className="scale-90"
+                />
+              </div>
               <textarea
                 value={sourceText}
                 onChange={(e) => setSourceText(e.target.value)}
@@ -159,6 +240,16 @@ const Translator = () => {
             </div>
 
             <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium text-gray-700">
+                  翻訳結果
+                </label>
+                <SpeechControls
+                  text={translatedText}
+                  language={targetLang}
+                  className="scale-90"
+                />
+              </div>
               <textarea
                 value={translatedText}
                 readOnly
@@ -199,15 +290,44 @@ const Translator = () => {
                   { phrase: 'see you later', japanese: 'また後で', arabic: 'أراك لاحقا (アラーカ・ラーヒカン)' },
                   { phrase: 'nice to meet you', japanese: 'はじめまして', arabic: 'تشرفنا (タシャッラフナー)' }
                 ].map((item) => (
-                  <button
+                  <div
                     key={item.phrase}
-                    onClick={() => setSourceText(item.phrase)}
-                    className="p-3 text-left bg-gray-50 hover:bg-gray-100 rounded-md transition-colors border border-gray-200"
+                    className="p-3 bg-gray-50 hover:bg-gray-100 rounded-md transition-colors border border-gray-200 group"
                   >
-                    <div className="font-medium text-gray-900">{item.japanese}</div>
-                    <div className="text-xs text-gray-500 mt-1">{item.phrase}</div>
-                    <div className="text-xs text-morocco-gold mt-1">{item.arabic}</div>
-                  </button>
+                    <div className="flex justify-between items-start">
+                      <button
+                        onClick={() => setSourceText(item.japanese)}
+                        className="flex-1 text-left"
+                      >
+                        <div className="font-medium text-gray-900">{item.japanese}</div>
+                        <div className="text-xs text-gray-500 mt-1">{item.phrase}</div>
+                        <div className="text-xs text-morocco-gold mt-1">{item.arabic}</div>
+                      </button>
+                      <div className="flex flex-col space-y-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => speakPhrase(item.phrase, 'en')}
+                          className="p-1 text-blue-500 hover:bg-blue-100 rounded text-xs"
+                          title="英語で再生"
+                        >
+                          🔊
+                        </button>
+                        <button
+                          onClick={() => speakPhrase(item.japanese, 'ja')}
+                          className="p-1 text-green-500 hover:bg-green-100 rounded text-xs"
+                          title="日本語で再生"
+                        >
+                          🎌
+                        </button>
+                        <button
+                          onClick={() => speakPhrase(item.arabic.split(' (')[0], 'ar')}
+                          className="p-1 text-orange-500 hover:bg-orange-100 rounded text-xs"
+                          title="アラビア語で再生"
+                        >
+                          🕌
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -226,15 +346,44 @@ const Translator = () => {
                   { phrase: 'I am sorry', japanese: '申し訳ありません', arabic: 'أنا آسف (アナー・アーシフ)' },
                   { phrase: 'no problem', japanese: '問題ありません', arabic: 'لا مشكلة (ラー・ムシュキラ)' }
                 ].map((item) => (
-                  <button
+                  <div
                     key={item.phrase}
-                    onClick={() => setSourceText(item.phrase)}
-                    className="p-3 text-left bg-gray-50 hover:bg-gray-100 rounded-md transition-colors border border-gray-200"
+                    className="p-3 bg-gray-50 hover:bg-gray-100 rounded-md transition-colors border border-gray-200 group"
                   >
-                    <div className="font-medium text-gray-900">{item.japanese}</div>
-                    <div className="text-xs text-gray-500 mt-1">{item.phrase}</div>
-                    <div className="text-xs text-morocco-gold mt-1">{item.arabic}</div>
-                  </button>
+                    <div className="flex justify-between items-start">
+                      <button
+                        onClick={() => setSourceText(item.japanese)}
+                        className="flex-1 text-left"
+                      >
+                        <div className="font-medium text-gray-900">{item.japanese}</div>
+                        <div className="text-xs text-gray-500 mt-1">{item.phrase}</div>
+                        <div className="text-xs text-morocco-gold mt-1">{item.arabic}</div>
+                      </button>
+                      <div className="flex flex-col space-y-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => speakPhrase(item.phrase, 'en')}
+                          className="p-1 text-blue-500 hover:bg-blue-100 rounded text-xs"
+                          title="英語で再生"
+                        >
+                          🔊
+                        </button>
+                        <button
+                          onClick={() => speakPhrase(item.japanese, 'ja')}
+                          className="p-1 text-green-500 hover:bg-green-100 rounded text-xs"
+                          title="日本語で再生"
+                        >
+                          🎌
+                        </button>
+                        <button
+                          onClick={() => speakPhrase(item.arabic.split(' (')[0], 'ar')}
+                          className="p-1 text-orange-500 hover:bg-orange-100 rounded text-xs"
+                          title="アラビア語で再生"
+                        >
+                          🕌
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -256,15 +405,44 @@ const Translator = () => {
                   { phrase: 'airport', japanese: '空港', arabic: 'مطار (マタール)' },
                   { phrase: 'hotel', japanese: 'ホテル', arabic: 'فندق (ファンダク)' }
                 ].map((item) => (
-                  <button
+                  <div
                     key={item.phrase}
-                    onClick={() => setSourceText(item.phrase)}
-                    className="p-3 text-left bg-gray-50 hover:bg-gray-100 rounded-md transition-colors border border-gray-200"
+                    className="p-3 bg-gray-50 hover:bg-gray-100 rounded-md transition-colors border border-gray-200 group"
                   >
-                    <div className="font-medium text-gray-900">{item.japanese}</div>
-                    <div className="text-xs text-gray-500 mt-1">{item.phrase}</div>
-                    <div className="text-xs text-morocco-gold mt-1">{item.arabic}</div>
-                  </button>
+                    <div className="flex justify-between items-start">
+                      <button
+                        onClick={() => setSourceText(item.japanese)}
+                        className="flex-1 text-left"
+                      >
+                        <div className="font-medium text-gray-900">{item.japanese}</div>
+                        <div className="text-xs text-gray-500 mt-1">{item.phrase}</div>
+                        <div className="text-xs text-morocco-gold mt-1">{item.arabic}</div>
+                      </button>
+                      <div className="flex flex-col space-y-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => speakPhrase(item.phrase, 'en')}
+                          className="p-1 text-blue-500 hover:bg-blue-100 rounded text-xs"
+                          title="英語で再生"
+                        >
+                          🔊
+                        </button>
+                        <button
+                          onClick={() => speakPhrase(item.japanese, 'ja')}
+                          className="p-1 text-green-500 hover:bg-green-100 rounded text-xs"
+                          title="日本語で再生"
+                        >
+                          🎌
+                        </button>
+                        <button
+                          onClick={() => speakPhrase(item.arabic.split(' (')[0], 'ar')}
+                          className="p-1 text-orange-500 hover:bg-orange-100 rounded text-xs"
+                          title="アラビア語で再生"
+                        >
+                          🕌
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -286,15 +464,44 @@ const Translator = () => {
                   { phrase: 'the bill please', japanese: 'お会計をお願いします', arabic: 'الفاتورة من فضلك (アル・ファートゥーラ・ミン・ファドリク)' },
                   { phrase: 'delicious', japanese: 'おいしい', arabic: 'لذيذ (ラジーズ)' }
                 ].map((item) => (
-                  <button
+                  <div
                     key={item.phrase}
-                    onClick={() => setSourceText(item.phrase)}
-                    className="p-3 text-left bg-gray-50 hover:bg-gray-100 rounded-md transition-colors border border-gray-200"
+                    className="p-3 bg-gray-50 hover:bg-gray-100 rounded-md transition-colors border border-gray-200 group"
                   >
-                    <div className="font-medium text-gray-900">{item.japanese}</div>
-                    <div className="text-xs text-gray-500 mt-1">{item.phrase}</div>
-                    <div className="text-xs text-morocco-gold mt-1">{item.arabic}</div>
-                  </button>
+                    <div className="flex justify-between items-start">
+                      <button
+                        onClick={() => setSourceText(item.japanese)}
+                        className="flex-1 text-left"
+                      >
+                        <div className="font-medium text-gray-900">{item.japanese}</div>
+                        <div className="text-xs text-gray-500 mt-1">{item.phrase}</div>
+                        <div className="text-xs text-morocco-gold mt-1">{item.arabic}</div>
+                      </button>
+                      <div className="flex flex-col space-y-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => speakPhrase(item.phrase, 'en')}
+                          className="p-1 text-blue-500 hover:bg-blue-100 rounded text-xs"
+                          title="英語で再生"
+                        >
+                          🔊
+                        </button>
+                        <button
+                          onClick={() => speakPhrase(item.japanese, 'ja')}
+                          className="p-1 text-green-500 hover:bg-green-100 rounded text-xs"
+                          title="日本語で再生"
+                        >
+                          🎌
+                        </button>
+                        <button
+                          onClick={() => speakPhrase(item.arabic.split(' (')[0], 'ar')}
+                          className="p-1 text-orange-500 hover:bg-orange-100 rounded text-xs"
+                          title="アラビア語で再生"
+                        >
+                          🕌
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -316,15 +523,44 @@ const Translator = () => {
                   { phrase: 'souvenir', japanese: 'お土産', arabic: 'تذكار (タズカール)' },
                   { phrase: 'beautiful', japanese: '美しい', arabic: 'جميل (ジャミール)' }
                 ].map((item) => (
-                  <button
+                  <div
                     key={item.phrase}
-                    onClick={() => setSourceText(item.phrase)}
-                    className="p-3 text-left bg-gray-50 hover:bg-gray-100 rounded-md transition-colors border border-gray-200"
+                    className="p-3 bg-gray-50 hover:bg-gray-100 rounded-md transition-colors border border-gray-200 group"
                   >
-                    <div className="font-medium text-gray-900">{item.japanese}</div>
-                    <div className="text-xs text-gray-500 mt-1">{item.phrase}</div>
-                    <div className="text-xs text-morocco-gold mt-1">{item.arabic}</div>
-                  </button>
+                    <div className="flex justify-between items-start">
+                      <button
+                        onClick={() => setSourceText(item.japanese)}
+                        className="flex-1 text-left"
+                      >
+                        <div className="font-medium text-gray-900">{item.japanese}</div>
+                        <div className="text-xs text-gray-500 mt-1">{item.phrase}</div>
+                        <div className="text-xs text-morocco-gold mt-1">{item.arabic}</div>
+                      </button>
+                      <div className="flex flex-col space-y-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => speakPhrase(item.phrase, 'en')}
+                          className="p-1 text-blue-500 hover:bg-blue-100 rounded text-xs"
+                          title="英語で再生"
+                        >
+                          🔊
+                        </button>
+                        <button
+                          onClick={() => speakPhrase(item.japanese, 'ja')}
+                          className="p-1 text-green-500 hover:bg-green-100 rounded text-xs"
+                          title="日本語で再生"
+                        >
+                          🎌
+                        </button>
+                        <button
+                          onClick={() => speakPhrase(item.arabic.split(' (')[0], 'ar')}
+                          className="p-1 text-orange-500 hover:bg-orange-100 rounded text-xs"
+                          title="アラビア語で再生"
+                        >
+                          🕌
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -346,15 +582,44 @@ const Translator = () => {
                   { phrase: 'I am sick', japanese: '病気です', arabic: 'أنا مريض (アナー・マリード)' },
                   { phrase: 'emergency', japanese: '緊急事態', arabic: 'طوارئ (タワーリ)' }
                 ].map((item) => (
-                  <button
+                  <div
                     key={item.phrase}
-                    onClick={() => setSourceText(item.phrase)}
-                    className="p-3 text-left bg-gray-50 hover:bg-gray-100 rounded-md transition-colors border border-gray-200"
+                    className="p-3 bg-gray-50 hover:bg-gray-100 rounded-md transition-colors border border-gray-200 group"
                   >
-                    <div className="font-medium text-gray-900">{item.japanese}</div>
-                    <div className="text-xs text-gray-500 mt-1">{item.phrase}</div>
-                    <div className="text-xs text-morocco-gold mt-1">{item.arabic}</div>
-                  </button>
+                    <div className="flex justify-between items-start">
+                      <button
+                        onClick={() => setSourceText(item.japanese)}
+                        className="flex-1 text-left"
+                      >
+                        <div className="font-medium text-gray-900">{item.japanese}</div>
+                        <div className="text-xs text-gray-500 mt-1">{item.phrase}</div>
+                        <div className="text-xs text-morocco-gold mt-1">{item.arabic}</div>
+                      </button>
+                      <div className="flex flex-col space-y-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => speakPhrase(item.phrase, 'en')}
+                          className="p-1 text-blue-500 hover:bg-blue-100 rounded text-xs"
+                          title="英語で再生"
+                        >
+                          🔊
+                        </button>
+                        <button
+                          onClick={() => speakPhrase(item.japanese, 'ja')}
+                          className="p-1 text-green-500 hover:bg-green-100 rounded text-xs"
+                          title="日本語で再生"
+                        >
+                          🎌
+                        </button>
+                        <button
+                          onClick={() => speakPhrase(item.arabic.split(' (')[0], 'ar')}
+                          className="p-1 text-orange-500 hover:bg-orange-100 rounded text-xs"
+                          title="アラビア語で再生"
+                        >
+                          🕌
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -376,15 +641,44 @@ const Translator = () => {
                   { phrase: 'tomorrow', japanese: '明日', arabic: 'غدا (ガダン)' },
                   { phrase: 'yesterday', japanese: '昨日', arabic: 'أمس (アムス)' }
                 ].map((item) => (
-                  <button
+                  <div
                     key={item.phrase}
-                    onClick={() => setSourceText(item.phrase)}
-                    className="p-3 text-left bg-gray-50 hover:bg-gray-100 rounded-md transition-colors border border-gray-200"
+                    className="p-3 bg-gray-50 hover:bg-gray-100 rounded-md transition-colors border border-gray-200 group"
                   >
-                    <div className="font-medium text-gray-900">{item.japanese}</div>
-                    <div className="text-xs text-gray-500 mt-1">{item.phrase}</div>
-                    <div className="text-xs text-morocco-gold mt-1">{item.arabic}</div>
-                  </button>
+                    <div className="flex justify-between items-start">
+                      <button
+                        onClick={() => setSourceText(item.japanese)}
+                        className="flex-1 text-left"
+                      >
+                        <div className="font-medium text-gray-900">{item.japanese}</div>
+                        <div className="text-xs text-gray-500 mt-1">{item.phrase}</div>
+                        <div className="text-xs text-morocco-gold mt-1">{item.arabic}</div>
+                      </button>
+                      <div className="flex flex-col space-y-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => speakPhrase(item.phrase, 'en')}
+                          className="p-1 text-blue-500 hover:bg-blue-100 rounded text-xs"
+                          title="英語で再生"
+                        >
+                          🔊
+                        </button>
+                        <button
+                          onClick={() => speakPhrase(item.japanese, 'ja')}
+                          className="p-1 text-green-500 hover:bg-green-100 rounded text-xs"
+                          title="日本語で再生"
+                        >
+                          🎌
+                        </button>
+                        <button
+                          onClick={() => speakPhrase(item.arabic.split(' (')[0], 'ar')}
+                          className="p-1 text-orange-500 hover:bg-orange-100 rounded text-xs"
+                          title="アラビア語で再生"
+                        >
+                          🕌
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
