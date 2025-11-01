@@ -73,53 +73,88 @@
     transition: all 0.3s ease;
     cursor: pointer;
     border-radius: 12px !important;
-    background-color: white !important;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
     color: #333 !important;
+    border: 1px solid #dee2e6 !important;
 }
 
 .category-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
+    color: white !important;
     border-color: transparent !important;
+}
+
+.category-card:hover .text-muted {
+    color: rgba(255,255,255,0.8) !important;
+}
+
+.category-card:hover .text-primary {
+    color: white !important;
+}
+
+.category-card:hover h6 {
+    color: white !important;
+}
+
+.category-card.bg-primary {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
+    color: white !important;
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,123,255,0.3) !important;
+    border-color: transparent !important;
+}
+
+.category-card.bg-primary .text-muted {
+    color: rgba(255,255,255,0.8) !important;
+}
+
+.category-card.bg-primary h6 {
+    color: white !important;
 }
 
 .category-card .card-body {
     border-radius: 12px;
-    transition: background-color 0.3s ease;
+    transition: all 0.3s ease;
     color: #333 !important;
 }
 
 .category-card h6 {
     color: #333 !important;
+    font-weight: 600 !important;
 }
 
 .category-card .text-muted {
     color: #6c757d !important;
 }
 
-.category-card:hover .card-body {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    color: #333 !important;
-}
-
 .category-card i {
     transition: transform 0.3s ease;
+    color: #007bff !important;
 }
 
 .category-card:hover i {
     transform: scale(1.1);
+    color: white !important;
+}
+
+.category-card.bg-primary i {
+    color: white !important;
 }
 
 /* カード全般 */
 .card {
     border-radius: 12px !important;
-    transition: box-shadow 0.3s ease;
+    transition: all 0.3s ease;
     background-color: white !important;
     color: #333 !important;
+    border: 1px solid #dee2e6 !important;
 }
 
 .card:hover {
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1) !important;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+    transform: translateY(-3px);
 }
 
 .card-header {
@@ -127,6 +162,7 @@
     font-weight: 600;
     background-color: white !important;
     color: #333 !important;
+    border-bottom: 1px solid #f0f0f0 !important;
 }
 
 .card-body {
@@ -135,10 +171,73 @@
 
 .card-title {
     color: #333 !important;
+    font-weight: 600 !important;
 }
 
 .card-text {
     color: #333 !important;
+}
+
+/* 旅行ルート関連スタイル */
+.route-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%) !important;
+}
+
+.result-count {
+    color: #6c757d !important;
+    font-weight: 500;
+}
+
+/* フィルター関連 */
+.filter-section {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%) !important;
+    border-radius: 12px !important;
+    padding: 1.5rem !important;
+    margin-bottom: 2rem !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08) !important;
+    border: 1px solid #dee2e6 !important;
+}
+
+.filter-section .form-control {
+    border-radius: 8px !important;
+    border: 1px solid #ced4da !important;
+    transition: all 0.3s ease;
+}
+
+.filter-section .form-control:focus {
+    border-color: #007bff !important;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25) !important;
+}
+
+/* バッジスタイル */
+.badge {
+    border-radius: 20px !important;
+    padding: 0.5rem 0.8rem !important;
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
+}
+
+.badge.bg-light {
+    background-color: #f8f9fa !important;
+    color: #495057 !important;
+    border: 1px solid #dee2e6 !important;
+}
+
+.badge.bg-success {
+    background: linear-gradient(135deg, #28a745, #20c997) !important;
+}
+
+.badge.bg-warning {
+    background: linear-gradient(135deg, #ffc107, #fd7e14) !important;
+    color: #212529 !important;
+}
+
+.badge.bg-danger {
+    background: linear-gradient(135deg, #dc3545, #c82333) !important;
+}
+
+.badge.bg-primary {
+    background: linear-gradient(135deg, #007bff, #0056b3) !important;
 }
 
 /* ボタンスタイル */
@@ -294,4 +393,364 @@ h1, h2, h3, h4, h5, h6 {
 
 .border-0 {
     border: none !important;
+}
+
+/* アラート */
+.alert {
+    border-radius: 12px !important;
+    border: none !important;
+}
+
+.alert-info {
+    background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%) !important;
+    color: #0c5460 !important;
+}
+
+.alert-warning {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%) !important;
+    color: #856404 !important;
+}
+
+/* ボタンアウトライン */
+.btn-outline-primary {
+    border-color: #007bff !important;
+    color: #007bff !important;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-primary:hover {
+    background-color: #007bff !important;
+    border-color: #007bff !important;
+    color: white !important;
+    transform: translateY(-1px);
+}
+
+/* モーダルの改良 */
+.modal-content {
+    border-radius: 15px !important;
+    border: none !important;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15) !important;
+}
+
+.modal-header {
+    border-bottom: 1px solid #f0f0f0 !important;
+    border-radius: 15px 15px 0 0 !important;
+}
+
+/* スクロールバー */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #0056b3, #004085);
+}
+
+/* レスポンシブ調整（追加） */
+@media (max-width: 768px) {
+    .filter-section {
+        padding: 1rem !important;
+    }
+    
+    .card-body {
+        padding: 1rem !important;
+    }
+    
+    .category-card {
+        margin-bottom: 1rem !important;
+    }
+    
+    .badge {
+        font-size: 0.7rem !important;
+        padding: 0.4rem 0.6rem !important;
+    }
+}
+
+/* 読み込み中アニメーション */
+.loading-spinner {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #007bff;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* アニメーションの改良 */
+.fade-in-up {
+    animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* ホバーエフェクト */
+.text-hover-primary:hover {
+    color: #007bff !important;
+}
+
+.text-hover-white:hover {
+    color: white !important;
+}
+
+/* カスタムボーダー */
+.border-start {
+    border-left: 3px solid !important;
+}
+
+.border-primary {
+    border-color: #007bff !important;
+}
+
+/* チャット関連スタイル */
+.chat-container {
+    height: 400px;
+    overflow-y: auto;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+    border-radius: 12px !important;
+    padding: 1rem !important;
+    border: 1px solid #dee2e6 !important;
+}
+
+.chat-message {
+    margin-bottom: 1rem !important;
+    padding: 1rem !important;
+    border-radius: 12px !important;
+    border: 1px solid #dee2e6 !important;
+    position: relative;
+    max-width: 85%;
+    word-wrap: break-word;
+    line-height: 1.6;
+}
+
+.chat-message.user {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
+    color: white !important;
+    margin-left: auto;
+    margin-right: 0;
+}
+
+.chat-message.user strong {
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.chat-message.bot {
+    background: white !important;
+    color: #333 !important;
+    margin-left: 0;
+    margin-right: auto;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+}
+
+.chat-message.bot strong {
+    color: #007bff !important;
+    font-weight: 600 !important;
+}
+
+/* AI返答の特別フォーマット */
+.chat-message.bot .formatted-response {
+    color: #333 !important;
+}
+
+.chat-message.bot .formatted-response h1,
+.chat-message.bot .formatted-response h2,
+.chat-message.bot .formatted-response h3,
+.chat-message.bot .formatted-response h4,
+.chat-message.bot .formatted-response h5,
+.chat-message.bot .formatted-response h6 {
+    color: #007bff !important;
+    margin-top: 1rem !important;
+    margin-bottom: 0.5rem !important;
+    font-weight: 600 !important;
+}
+
+.chat-message.bot .formatted-response h1 { font-size: 1.3rem !important; }
+.chat-message.bot .formatted-response h2 { font-size: 1.2rem !important; }
+.chat-message.bot .formatted-response h3 { font-size: 1.1rem !important; }
+.chat-message.bot .formatted-response h4 { font-size: 1.05rem !important; }
+.chat-message.bot .formatted-response h5 { font-size: 1rem !important; }
+.chat-message.bot .formatted-response h6 { font-size: 0.95rem !important; }
+
+.chat-message.bot .formatted-response ul,
+.chat-message.bot .formatted-response ol {
+    margin: 0.5rem 0 !important;
+    padding-left: 1.2rem !important;
+    list-style: none !important;
+}
+
+.chat-message.bot .formatted-response ul li {
+    margin-bottom: 0.4rem !important;
+    color: #333 !important;
+    position: relative;
+    padding-left: 1rem !important;
+}
+
+.chat-message.bot .formatted-response ul li::before {
+    content: "▶";
+    color: #007bff !important;
+    font-size: 0.8rem;
+    position: absolute;
+    left: 0;
+    top: 0.1rem;
+}
+
+.chat-message.bot .formatted-response ol li {
+    margin-bottom: 0.4rem !important;
+    color: #333 !important;
+    padding-left: 0.5rem !important;
+}
+
+.chat-message.bot .formatted-response strong {
+    color: #007bff !important;
+    font-weight: 600 !important;
+}
+
+.chat-message.bot .formatted-response em {
+    color: #6c757d !important;
+    font-style: italic;
+}
+
+.chat-message.bot .formatted-response p {
+    margin-bottom: 0.8rem !important;
+    color: #333 !important;
+}
+
+.chat-message.bot .formatted-response blockquote {
+    border-left: 3px solid #007bff !important;
+    padding-left: 1rem !important;
+    margin: 1rem 0 !important;
+    color: #6c757d !important;
+    font-style: italic;
+}
+
+.chat-message.bot .formatted-response .highlight {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%) !important;
+    padding: 0.2rem 0.4rem !important;
+    border-radius: 4px !important;
+    color: #856404 !important;
+    font-weight: 500 !important;
+}
+
+.chat-message.bot .formatted-response .section-divider {
+    border-top: 1px solid #dee2e6 !important;
+    margin: 1.5rem 0 1rem 0 !important;
+}
+
+/* 絵文字とアイコンのスタイル */
+.chat-message .emoji {
+    font-size: 1.1em;
+    margin-right: 0.3rem;
+}
+
+/* スクロールバー（チャット用） */
+.chat-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.chat-container::-webkit-scrollbar-track {
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+.chat-container::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    border-radius: 10px;
+}
+
+.chat-container::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #0056b3, #004085);
+}
+
+/* 提案ボタン */
+.chat-suggestions {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.chat-suggestions .btn {
+    text-align: left !important;
+    font-size: 0.75rem !important;
+    padding: 0.4rem 0.8rem !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: all 0.2s ease;
+    border-radius: 20px !important;
+    margin: 0.1rem !important;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%) !important;
+    border: 1px solid #dee2e6 !important;
+    color: #495057 !important;
+}
+
+.chat-suggestions .btn:hover {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
+    color: white !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,123,255,0.3) !important;
+    border-color: transparent !important;
+}
+
+.chat-suggestions .btn-outline-info {
+    background: linear-gradient(135deg, #ffffff 0%, #e3f2fd 100%) !important;
+    border-color: #17a2b8 !important;
+    color: #17a2b8 !important;
+}
+
+.chat-suggestions .btn-outline-info:hover {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%) !important;
+    color: white !important;
+}
+
+/* ローディングアニメーション */
+.loading {
+    width: 16px;
+    height: 16px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+}
+
+/* レスポンシブ調整（チャット） */
+@media (max-width: 768px) {
+    .chat-container {
+        height: 300px;
+    }
+    
+    .chat-message {
+        max-width: 95%;
+        padding: 0.75rem !important;
+    }
+    
+    .chat-message.bot .formatted-response h1,
+    .chat-message.bot .formatted-response h2,
+    .chat-message.bot .formatted-response h3,
+    .chat-message.bot .formatted-response h4,
+    .chat-message.bot .formatted-response h5,
+    .chat-message.bot .formatted-response h6 {
+        font-size: 1rem !important;
+    }
 }

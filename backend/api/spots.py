@@ -11,47 +11,34 @@ spots_bp = Blueprint('spots', __name__)
 def get_spots():
     """観光スポット一覧取得"""
     try:
-        # サンプルデータを返す（後でDBから取得に変更）
-        sample_spots = [
-            {
-                'id': 1,
-                'name': 'ジャマ・エル・フナ広場',
-                'name_en': 'Jemaa el-Fnaa',
-                'city': 'マラケシュ',
-                'category': '広場・市場',
-                'rating': 4.5,
-                'latitude': 31.625901,
-                'longitude': -7.989161,
-                'description': 'マラケシュの中心部にある賑やかな広場。夜には屋台や大道芸人で溢れる'
-            },
-            {
-                'id': 2,
-                'name': 'サハラ砂漠',
-                'name_en': 'Sahara Desert',
-                'city': 'メルズーガ',
-                'category': '自然',
-                'rating': 4.8,
-                'latitude': 31.0801,
-                'longitude': -4.0133,
-                'description': '世界最大の砂漠。ラクダツアーや星空観察が人気'
-            },
-            {
-                'id': 3,
-                'name': 'シャウエン',
-                'name_en': 'Chefchaouen',
-                'city': 'シャウエン',
-                'category': '都市・建築',
-                'rating': 4.7,
-                'latitude': 35.1711,
-                'longitude': -5.2636,
-                'description': '青い街として有名な美しい山間の町'
-            }
-        ]
+        # データベースから観光スポット一覧を取得
+        spots = TourismSpot.query.all()
+        
+        spots_data = []
+        for spot in spots:
+            spots_data.append({
+                'id': spot.id,
+                'name': spot.name,
+                'name_en': spot.name_en,
+                'name_ar': spot.name_ar,
+                'city': spot.city,
+                'category': spot.category,
+                'rating': spot.rating,
+                'latitude': spot.latitude,
+                'longitude': spot.longitude,
+                'description': spot.description,
+                'description_en': spot.description_en,
+                'image_url': spot.image_url,
+                'best_time_to_visit': spot.best_time_to_visit,
+                'entry_fee': spot.entry_fee,
+                'opening_hours': spot.opening_hours,
+                'created_at': spot.created_at.isoformat() if spot.created_at else None
+            })
         
         return jsonify({
             'success': True,
-            'data': sample_spots,
-            'total': len(sample_spots)
+            'data': spots_data,
+            'total': len(spots_data)
         })
     except Exception as e:
         return jsonify({
@@ -62,30 +49,128 @@ def get_spots():
 @spots_bp.route('/<int:spot_id>')
 def get_spot_detail(spot_id):
     """観光スポット詳細取得"""
-    # サンプル詳細データ
-    sample_detail = {
-        'id': spot_id,
-        'name': 'ジャマ・エル・フナ広場',
-        'description': '詳細な説明がここに入ります...',
-        'opening_hours': '24時間',
-        'entry_fee': '無料',
-        'best_time_to_visit': '夕方〜夜'
-    }
-    
-    return jsonify({
-        'success': True,
-        'data': sample_detail
-    })
+    try:
+        spot = TourismSpot.query.get_or_404(spot_id)
+        
+        spot_data = {
+            'id': spot.id,
+            'name': spot.name,
+            'name_en': spot.name_en,
+            'name_ar': spot.name_ar,
+            'city': spot.city,
+            'category': spot.category,
+            'rating': spot.rating,
+            'latitude': spot.latitude,
+            'longitude': spot.longitude,
+            'description': spot.description,
+            'description_en': spot.description_en,
+            'image_url': spot.image_url,
+            'best_time_to_visit': spot.best_time_to_visit,
+            'entry_fee': spot.entry_fee,
+            'opening_hours': spot.opening_hours,
+            'created_at': spot.created_at.isoformat() if spot.created_at else None
+        }
+        
+        return jsonify({
+            'success': True,
+            'data': spot_data
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 404
 
 @spots_bp.route('/search')
 def search_spots():
     """観光スポット検索"""
-    query = request.args.get('q', '')
-    category = request.args.get('category', '')
-    
-    return jsonify({
-        'success': True,
-        'query': query,
-        'category': category,
-        'data': []
-    })
+    try:
+        query = request.args.get('q', '').strip()
+        category = request.args.get('category', '').strip()
+        city = request.args.get('city', '').strip()
+        
+        # ベースクエリ
+        spots_query = TourismSpot.query
+        
+        # 検索条件を追加
+        if query:
+            spots_query = spots_query.filter(
+                TourismSpot.name.contains(query) |
+                TourismSpot.description.contains(query) |
+                TourismSpot.city.contains(query)
+            )
+        
+        if category:
+            spots_query = spots_query.filter(TourismSpot.category == category)
+            
+        if city:
+            spots_query = spots_query.filter(TourismSpot.city == city)
+        
+        # 結果を取得
+        spots = spots_query.all()
+        
+        spots_data = []
+        for spot in spots:
+            spots_data.append({
+                'id': spot.id,
+                'name': spot.name,
+                'name_en': spot.name_en,
+                'city': spot.city,
+                'category': spot.category,
+                'rating': spot.rating,
+                'latitude': spot.latitude,
+                'longitude': spot.longitude,
+                'description': spot.description,
+                'image_url': spot.image_url,
+                'best_time_to_visit': spot.best_time_to_visit,
+                'entry_fee': spot.entry_fee,
+                'opening_hours': spot.opening_hours
+            })
+        
+        return jsonify({
+            'success': True,
+            'query': query,
+            'category': category,
+            'city': city,
+            'data': spots_data,
+            'total': len(spots_data)
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@spots_bp.route('/categories')
+def get_categories():
+    """カテゴリー一覧取得"""
+    try:
+        categories = db.session.query(TourismSpot.category).distinct().all()
+        category_list = [cat[0] for cat in categories if cat[0]]
+        
+        return jsonify({
+            'success': True,
+            'data': category_list
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@spots_bp.route('/cities')
+def get_cities():
+    """都市一覧取得"""
+    try:
+        cities = db.session.query(TourismSpot.city).distinct().all()
+        city_list = [city[0] for city in cities if city[0]]
+        
+        return jsonify({
+            'success': True,
+            'data': city_list
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500

@@ -8,21 +8,34 @@
         <h2><i class="fas fa-route text-success"></i> モロッコおすすめ旅行ルート</h2>
         <p class="lead">経験豊富なガイドが厳選した、モロッコの魅力を最大限に楽しめる旅行プランをご紹介します。</p>
         
+        <!-- カテゴリー別探索 -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <h3 class="text-dark mb-4">
+                    <i class="fas fa-th-large text-primary me-2"></i>
+                    カテゴリー別に探す
+                </h3>
+                <div class="row g-3" id="categoriesContainer">
+                    <!-- 動的に読み込み -->
+                </div>
+            </div>
+        </div>
+        
         <!-- フィルター -->
-        <div class="card mb-4">
+        <div class="card mb-4 border-0 shadow-sm">
             <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4">
-                        <label class="form-label">旅行期間</label>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">旅行期間</label>
                         <select class="form-select" id="durationFilter" onchange="filterRoutes()">
                             <option value="">すべての期間</option>
                             <option value="3">3-4日間</option>
-                            <option value="7">7日間</option>
+                            <option value="7">5-9日間</option>
                             <option value="10">10日間以上</option>
                         </select>
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label">難易度</label>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">難易度</label>
                         <select class="form-select" id="difficultyFilter" onchange="filterRoutes()">
                             <option value="">すべて</option>
                             <option value="Easy">初心者向け</option>
@@ -30,15 +43,25 @@
                             <option value="Hard">上級者向け</option>
                         </select>
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label">テーマ</label>
-                        <select class="form-select" id="themeFilter" onchange="filterRoutes()">
-                            <option value="">すべてのテーマ</option>
-                            <option value="culture">文化・歴史</option>
-                            <option value="nature">自然・アドベンチャー</option>
-                            <option value="gourmet">グルメ</option>
-                            <option value="relax">リラックス</option>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">選択中のカテゴリー</label>
+                        <select class="form-select" id="categoryFilter" onchange="filterRoutes()">
+                            <option value="">すべてのカテゴリー</option>
+                            <!-- 動的に読み込み -->
                         </select>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+                            <i class="fas fa-times me-1"></i>フィルターをクリア
+                        </button>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <span class="small text-muted">
+                            <i class="fas fa-info-circle"></i>
+                            <span id="resultCount">読み込み中...</span>
+                        </span>
                     </div>
                 </div>
             </div>
@@ -74,123 +97,181 @@
 
 {% block scripts %}
 <script>
-// サンプルルートデータ
-const sampleRoutes = [
-    {
-        id: 1,
-        name: "王道モロッコ周遊7日間",
-        duration: 7,
-        difficulty: "Easy",
-        theme: "culture",
-        description: "初回訪問に最適！主要都市を効率よく巡る定番コース",
-        highlights: ["カサブランカ", "ラバト", "フェズ", "シャウエン", "マラケシュ"],
-        price: "150,000円〜",
-        image: "https://via.placeholder.com/300x200?text=Classic+Morocco+Tour",
-        itinerary: {
-            day1: "カサブランカ到着 - ハッサン2世モスク見学",
-            day2: "ラバト観光 - フェズへ移動",
-            day3: "フェズ旧市街散策 - 伝統工芸見学",
-            day4: "シャウエン観光 - 青い街散策",
-            day5: "マラケシュへ移動 - ジャマエルフナ広場",
-            day6: "マラケシュ市内観光 - マジョレル庭園",
-            day7: "カサブランカ経由で帰国"
-        }
-    },
-    {
-        id: 2,
-        name: "サハラ砂漠アドベンチャー4日間",
-        duration: 4,
-        difficulty: "Medium",
-        theme: "nature",
-        description: "ラクダトレッキングと星空キャンプで砂漠の魅力を満喫",
-        highlights: ["マラケシュ", "アイト・ベン・ハドゥ", "メルズーガ", "サハラ砂漠"],
-        price: "80,000円〜",
-        image: "https://via.placeholder.com/300x200?text=Sahara+Adventure",
-        itinerary: {
-            day1: "マラケシュ出発 - アイト・ベン・ハドゥ見学",
-            day2: "サハラ砂漠到着 - ラクダトレッキング開始",
-            day3: "砂漠キャンプ - 星空観察 - 日の出鑑賞",
-            day4: "マラケシュ帰着 - スーク散策"
-        }
-    },
-    {
-        id: 3,
-        name: "美食とリヤド満喫5日間",
-        duration: 5,
-        difficulty: "Easy",
-        theme: "gourmet",
-        description: "本格モロッコ料理と伝統的なリヤド宿泊を楽しむグルメ旅",
-        highlights: ["マラケシュ", "フェズ", "料理教室", "高級リヤド"],
-        price: "120,000円〜",
-        image: "https://via.placeholder.com/300x200?text=Gourmet+Morocco",
-        itinerary: {
-            day1: "マラケシュ到着 - リヤドチェックイン",
-            day2: "料理教室 - スパイス市場見学",
-            day3: "フェズへ移動 - 伝統レストラン",
-            day4: "フェズ観光 - 高級リヤド体験",
-            day5: "カサブランカ経由で帰国"
-        }
-    },
-    {
-        id: 4,
-        name: "ベルベル文化体験10日間",
-        duration: 10,
-        difficulty: "Hard",
-        theme: "culture",
-        description: "アトラス山脈のベルベル村とサハラ砂漠を巡る本格文化体験",
-        highlights: ["アトラス山脈", "ベルベル村", "サハラ砂漠", "伝統工芸"],
-        price: "200,000円〜",
-        image: "https://via.placeholder.com/300x200?text=Berber+Culture",
-        itinerary: {
-            day1: "カサブランカ到着",
-            day2: "マラケシュ - アトラス山脈へ",
-            day3: "ベルベル村ホームステイ",
-            day4: "トレッキング - 村巡り",
-            day5: "サハラ砂漠へ移動",
-            day6: "砂漠キャンプ体験",
-            day7: "フェズへ移動",
-            day8: "フェズ観光 - 工芸見学",
-            day9: "シャウエン観光",
-            day10: "カサブランカ経由帰国"
-        }
-    }
-];
+let allRoutes = [];
+let currentRoutes = [];
+let allCategories = [];
+let selectedCategory = '';
 
 document.addEventListener('DOMContentLoaded', function() {
-    displayRoutes(sampleRoutes);
+    loadCategories();
+    loadRoutes();
 });
 
-function displayRoutes(routes) {
+async function loadCategories() {
+    try {
+        const response = await fetch('/api/routes/categories');
+        const data = await response.json();
+        
+        if (data.success) {
+            allCategories = data.data;
+            displayCategories();
+            populateCategoryFilter();
+        } else {
+            console.error('カテゴリーの読み込みに失敗:', data.error);
+        }
+    } catch (error) {
+        console.error('API通信エラー:', error);
+    }
+}
+
+async function loadRoutes() {
+    try {
+        const response = await fetch('/api/routes/');
+        const data = await response.json();
+        
+        if (data.success) {
+            // ルートにカテゴリー情報を追加
+            allRoutes = data.data.map(route => ({
+                ...route,
+                category: determineRouteCategory(route),
+                price: estimatePrice(route),
+                highlights: extractHighlights(route)
+            }));
+            currentRoutes = [...allRoutes];
+            displayRoutes();
+            updateResultCount();
+        } else {
+            console.error('ルートの読み込みに失敗:', data.error);
+        }
+    } catch (error) {
+        console.error('API通信エラー:', error);
+        showError('旅行ルート情報の読み込みに失敗しました。');
+    }
+}
+
+function displayCategories() {
+    const container = document.getElementById('categoriesContainer');
+    container.innerHTML = '';
+    
+    allCategories.forEach((category, index) => {
+        const categoryCard = `
+            <div class="col-lg-4 col-md-6 mb-3" style="animation-delay: ${0.1 * index}s">
+                <div class="card category-card h-100 border-0 shadow-sm" onclick="selectCategory('${category.id}')">
+                    <div class="card-body text-center p-4">
+                        <i class="fas ${getCategoryIcon(category.id)} fa-3x text-primary mb-3"></i>
+                        <h6 class="fw-bold text-dark">${category.name}</h6>
+                        <p class="text-muted small mb-0">${category.description}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+        container.innerHTML += categoryCard;
+    });
+}
+
+function populateCategoryFilter() {
+    const categoryFilter = document.getElementById('categoryFilter');
+    categoryFilter.innerHTML = '<option value="">すべてのカテゴリー</option>';
+    
+    allCategories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category.id;
+        option.textContent = category.name;
+        categoryFilter.appendChild(option);
+    });
+}
+
+function getCategoryIcon(categoryId) {
+    const icons = {
+        'cultural': 'fa-university',
+        'adventure': 'fa-mountain',
+        'classic': 'fa-star',
+        'luxury': 'fa-gem',
+        'gourmet': 'fa-utensils',
+        'relaxation': 'fa-spa',
+        'photography': 'fa-camera'
+    };
+    return icons[categoryId] || 'fa-route';
+}
+
+function selectCategory(categoryId) {
+    selectedCategory = categoryId;
+    document.getElementById('categoryFilter').value = categoryId;
+    filterRoutes();
+    
+    // カテゴリーカードの選択状態を更新
+    document.querySelectorAll('.category-card').forEach(card => {
+        card.classList.remove('bg-primary', 'text-white');
+        card.classList.add('border-0', 'shadow-sm');
+    });
+    
+    if (categoryId) {
+        const selectedCard = event.target.closest('.category-card');
+        if (selectedCard) {
+            selectedCard.classList.add('bg-primary', 'text-white');
+            selectedCard.classList.remove('border-0', 'shadow-sm');
+        }
+    }
+}
+
+function displayRoutes() {
     const container = document.getElementById('routesContainer');
     container.innerHTML = '';
     
-    routes.forEach(route => {
+    if (currentRoutes.length === 0) {
+        container.innerHTML = `
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">該当する旅行ルートが見つかりません</h4>
+                <p class="text-muted">検索条件を変更してお試しください。</p>
+            </div>
+        `;
+        return;
+    }
+    
+    currentRoutes.forEach((route, index) => {
         const routeCard = `
-            <div class="col-lg-6 mb-4">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h5 class="card-title">${route.name}</h5>
+            <div class="col-lg-6 mb-4" style="animation-delay: ${0.1 * index}s">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 pb-2">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <h5 class="card-title mb-0 fw-bold text-dark">${route.name}</h5>
                             <span class="badge bg-${getDifficultyColor(route.difficulty)}">${getDifficultyText(route.difficulty)}</span>
                         </div>
-                        <p class="card-text">${route.description}</p>
-                        <div class="mb-3">
-                            <small class="text-muted">
-                                <i class="fas fa-calendar"></i> ${route.duration}日間 | 
-                                <i class="fas fa-tag"></i> ${route.theme} | 
-                                <i class="fas fa-yen-sign"></i> ${route.price}
-                            </small>
+                        <small class="text-muted">
+                            <i class="fas ${getCategoryIcon(route.category)} text-primary me-1"></i>
+                            ${getCategoryName(route.category)}
+                        </small>
+                    </div>
+                    <div class="card-body pt-2">
+                        <p class="card-text text-dark mb-3">${route.description}</p>
+                        
+                        <div class="row g-2 small mb-3">
+                            <div class="col-4">
+                                <i class="fas fa-calendar text-info me-1"></i>
+                                <span class="text-muted">${route.duration_days}日間</span>
+                            </div>
+                            <div class="col-4">
+                                <i class="fas fa-yen-sign text-success me-1"></i>
+                                <span class="text-muted">${route.price}</span>
+                            </div>
+                            <div class="col-4">
+                                <i class="fas fa-users text-warning me-1"></i>
+                                <span class="text-muted">${route.difficulty}</span>
+                            </div>
                         </div>
+                        
                         <div class="mb-3">
-                            <strong>ハイライト:</strong><br>
-                            ${route.highlights.map(h => `<span class="badge bg-light text-dark me-1">${h}</span>`).join('')}
+                            <strong class="small">ハイライト:</strong><br>
+                            ${route.highlights.map(h => `<span class="badge bg-light text-dark me-1 mb-1">${h}</span>`).join('')}
                         </div>
+                        
                         <div class="d-flex justify-content-between">
-                            <button class="btn btn-outline-primary" onclick="viewRouteDetail(${route.id})">
-                                詳細を見る
+                            <button class="btn btn-outline-primary btn-sm" onclick="viewRouteDetail(${route.id})">
+                                <i class="fas fa-info-circle me-1"></i>詳細を見る
                             </button>
-                            <button class="btn btn-success" onclick="contactForBooking(${route.id})">
-                                予約相談
+                            <button class="btn btn-success btn-sm" onclick="contactForBooking(${route.id})">
+                                <i class="fas fa-envelope me-1"></i>予約相談
                             </button>
                         </div>
                     </div>
@@ -199,6 +280,71 @@ function displayRoutes(routes) {
         `;
         container.innerHTML += routeCard;
     });
+}
+
+function determineRouteCategory(route) {
+    const name = route.name.toLowerCase();
+    const description = route.description.toLowerCase();
+    
+    if (name.includes('サハラ') || name.includes('アドベンチャー') || name.includes('トレッキング')) {
+        return 'adventure';
+    } else if (name.includes('美食') || name.includes('料理') || name.includes('グルメ')) {
+        return 'gourmet';
+    } else if (name.includes('王道') || name.includes('周遊')) {
+        return 'classic';
+    } else if (name.includes('ベルベル') || name.includes('文化') || name.includes('歴史')) {
+        return 'cultural';
+    } else if (name.includes('ラグジュアリー') || name.includes('高級')) {
+        return 'luxury';
+    } else if (name.includes('リラック') || name.includes('スパ')) {
+        return 'relaxation';
+    } else if (name.includes('フォト') || name.includes('絶景')) {
+        return 'photography';
+    } else {
+        return 'classic';
+    }
+}
+
+function estimatePrice(route) {
+    const basePrices = {
+        'cultural': 120000,
+        'adventure': 150000,
+        'classic': 140000,
+        'luxury': 250000,
+        'gourmet': 180000,
+        'relaxation': 200000,
+        'photography': 160000
+    };
+    
+    const category = determineRouteCategory(route);
+    const basePrice = basePrices[category] || 140000;
+    const pricePerDay = basePrice / 7; // 7日間を基準
+    const estimatedPrice = Math.round(pricePerDay * route.duration_days / 1000) * 1000;
+    
+    return `${estimatedPrice.toLocaleString()}円〜`;
+}
+
+function extractHighlights(route) {
+    if (route.route_data && route.route_data.cities) {
+        return route.route_data.cities.slice(0, 4); // 最大4都市
+    }
+    
+    // フォールバック: ルート名から推測
+    const highlights = [];
+    const cities = ['マラケシュ', 'フェズ', 'カサブランカ', 'シャウエン', 'ラバト', 'メルズーガ', 'ワルザザード'];
+    
+    cities.forEach(city => {
+        if (route.name.includes(city) || route.description.includes(city)) {
+            highlights.push(city);
+        }
+    });
+    
+    return highlights.length > 0 ? highlights : ['モロッコ主要都市'];
+}
+
+function getCategoryName(categoryId) {
+    const category = allCategories.find(cat => cat.id === categoryId);
+    return category ? category.name : 'その他';
 }
 
 function getDifficultyColor(difficulty) {
@@ -219,64 +365,192 @@ function getDifficultyText(difficulty) {
     }
 }
 
-function filterRoutes() {
-    const duration = document.getElementById('durationFilter').value;
-    const difficulty = document.getElementById('difficultyFilter').value;
-    const theme = document.getElementById('themeFilter').value;
-    
-    let filteredRoutes = sampleRoutes.filter(route => {
-        return (!duration || route.duration.toString().includes(duration)) &&
-               (!difficulty || route.difficulty === difficulty) &&
-               (!theme || route.theme === theme);
-    });
-    
-    displayRoutes(filteredRoutes);
+function updateResultCount() {
+    const count = currentRoutes.length;
+    const total = allRoutes.length;
+    document.getElementById('resultCount').textContent = 
+        `${count}件の旅行ルート${count !== total ? ` (全${total}件中)` : ''}`;
 }
 
-function viewRouteDetail(routeId) {
-    const route = sampleRoutes.find(r => r.id === routeId);
-    if (!route) return;
+async function filterRoutes() {
+    const duration = document.getElementById('durationFilter').value;
+    const difficulty = document.getElementById('difficultyFilter').value;
+    const category = document.getElementById('categoryFilter').value || selectedCategory;
     
-    document.getElementById('routeDetailTitle').textContent = route.name;
+    if (!duration && !difficulty && !category) {
+        currentRoutes = [...allRoutes];
+    } else {
+        try {
+            const params = new URLSearchParams();
+            if (duration) params.append('duration', duration);
+            if (difficulty) params.append('difficulty', difficulty);
+            if (category) params.append('category', category);
+            
+            const response = await fetch(`/api/routes/search?${params}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                currentRoutes = data.data.map(route => ({
+                    ...route,
+                    category: determineRouteCategory(route),
+                    price: estimatePrice(route),
+                    highlights: extractHighlights(route)
+                }));
+            } else {
+                console.error('検索に失敗:', data.error);
+                currentRoutes = [];
+            }
+        } catch (error) {
+            console.error('検索エラー:', error);
+            currentRoutes = [];
+        }
+    }
     
-    let itineraryHtml = '<h6>詳細行程</h6><div class="row">';
-    Object.entries(route.itinerary).forEach(([day, activity]) => {
-        itineraryHtml += `
-            <div class="col-md-6 mb-2">
-                <div class="border-start border-primary ps-3">
-                    <strong>${day.replace('day', '第').replace(/(\d+)/, '$1日目')}</strong><br>
-                    <small>${activity}</small>
-                </div>
-            </div>
-        `;
+    displayRoutes();
+    updateResultCount();
+}
+
+function clearFilters() {
+    document.getElementById('durationFilter').value = '';
+    document.getElementById('difficultyFilter').value = '';
+    document.getElementById('categoryFilter').value = '';
+    selectedCategory = '';
+    
+    // カテゴリーカードの選択状態をクリア
+    document.querySelectorAll('.category-card').forEach(card => {
+        card.classList.remove('bg-primary', 'text-white');
+        card.classList.add('border-0', 'shadow-sm');
     });
-    itineraryHtml += '</div>';
     
-    document.getElementById('routeDetailBody').innerHTML = `
-        <div class="row">
-            <div class="col-md-8">
-                <p><strong>概要:</strong> ${route.description}</p>
-                <p><strong>期間:</strong> ${route.duration}日間</p>
-                <p><strong>難易度:</strong> ${getDifficultyText(route.difficulty)}</p>
-                <p><strong>料金目安:</strong> ${route.price}</p>
-                ${itineraryHtml}
-            </div>
-            <div class="col-md-4">
-                <img src="${route.image}" class="img-fluid rounded mb-3" alt="${route.name}">
-                <div class="alert alert-info">
-                    <small><i class="fas fa-info-circle"></i> 料金は2名様参加時の1名様料金です。シーズンにより変動します。</small>
+    currentRoutes = [...allRoutes];
+    displayRoutes();
+    updateResultCount();
+}
+
+async function viewRouteDetail(routeId) {
+    try {
+        const response = await fetch(`/api/routes/${routeId}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            const route = data.data;
+            
+            document.getElementById('routeDetailTitle').innerHTML = `
+                ${route.name}
+                <small class="text-muted d-block">${route.duration_days}日間 · ${getDifficultyText(route.difficulty)}</small>
+            `;
+            
+            let itineraryHtml = '';
+            if (route.route_data && route.route_data.daily_plan) {
+                itineraryHtml = '<h6 class="fw-bold">詳細行程</h6><div class="row">';
+                Object.entries(route.route_data.daily_plan).forEach(([day, activity]) => {
+                    itineraryHtml += `
+                        <div class="col-md-6 mb-3">
+                            <div class="border-start border-primary border-3 ps-3">
+                                <strong class="text-primary">${day.replace('day', '第').replace(/(\d+)/, '$1日目')}</strong><br>
+                                <small class="text-dark">${activity}</small>
+                            </div>
+                        </div>
+                    `;
+                });
+                itineraryHtml += '</div>';
+            }
+            
+            document.getElementById('routeDetailBody').innerHTML = `
+                <div class="row">
+                    <div class="col-md-8">
+                        <h6 class="fw-bold">ルート概要</h6>
+                        <p class="text-dark">${route.description}</p>
+                        
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <div class="text-center p-2 bg-light rounded">
+                                    <i class="fas fa-calendar text-primary"></i>
+                                    <div class="small text-muted">期間</div>
+                                    <div class="fw-bold">${route.duration_days}日間</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-center p-2 bg-light rounded">
+                                    <i class="fas fa-user-friends text-info"></i>
+                                    <div class="small text-muted">難易度</div>
+                                    <div class="fw-bold">${getDifficultyText(route.difficulty)}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-center p-2 bg-light rounded">
+                                    <i class="fas fa-tag text-success"></i>
+                                    <div class="small text-muted">カテゴリー</div>
+                                    <div class="fw-bold">${getCategoryName(determineRouteCategory(route))}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        ${itineraryHtml}
+                    </div>
+                    <div class="col-md-4">
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-info-circle"></i> 料金について</h6>
+                            <p class="small mb-0">料金は2名様参加時の1名様料金の目安です。シーズン、宿泊施設のランク、食事内容により変動します。詳細はお問い合わせください。</p>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <h6><i class="fas fa-exclamation-triangle"></i> 注意事項</h6>
+                            <ul class="small mb-0">
+                                <li>現地の気候に適した服装をご準備ください</li>
+                                <li>日程は現地の事情により変更される場合があります</li>
+                                <li>最少催行人数は2名様です</li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
-    `;
-    
-    const modal = new bootstrap.Modal(document.getElementById('routeDetailModal'));
-    modal.show();
+            `;
+            
+            const modal = new bootstrap.Modal(document.getElementById('routeDetailModal'));
+            modal.show();
+        } else {
+            showError('ルート詳細の読み込みに失敗しました。');
+        }
+    } catch (error) {
+        console.error('ルート詳細の取得に失敗:', error);
+        showError('ルート詳細の読み込み中にエラーが発生しました。');
+    }
 }
 
 function contactForBooking(routeId) {
-    const route = sampleRoutes.find(r => r.id === routeId);
-    alert(`「${route.name}」の予約相談を承ります。\n\n実際のサービスでは、こちらから予約フォームや連絡先情報を表示します。`);
+    const route = allRoutes.find(r => r.id === routeId);
+    if (route) {
+        showToast(`「${route.name}」の予約相談を承ります。実際のサービスでは予約フォームを表示します。`, 'info');
+    }
+}
+
+function showError(message) {
+    const container = document.getElementById('routesContainer');
+    container.innerHTML = `
+        <div class="col-12 text-center py-5">
+            <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+            <h4 class="text-muted">エラーが発生しました</h4>
+            <p class="text-muted">${message}</p>
+            <button class="btn btn-primary" onclick="loadRoutes()">再読み込み</button>
+        </div>
+    `;
+}
+
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type} position-fixed`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close float-end" onclick="this.parentElement.remove()"></button>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.remove();
+        }
+    }, 5000);
 }
 </script>
 {% endblock %}

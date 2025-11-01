@@ -14,17 +14,41 @@
                 <!-- チャット表示エリア -->
                 <div class="chat-container" id="chatContainer">
                     <div class="chat-message bot">
-                        <strong>AI案内:</strong><br>
-                        こんにちは！モロッコ観光のAI案内です<br>
-                        観光地、文化、気候、交通など、何でもお聞きください！
+                        <strong>🤖 AI案内:</strong><br>
+                        <div class="formatted-response">
+                            <h4>🇲🇦 السلام عليكم (アッサラーム・アライクム) こんにちは！</h4>
+                            <p>私はあなた専用のモロッコ観光ガイド「ハッサン」です✨<br>
+                            20年以上モロッコ全土をご案内してきた経験を活かし、最高の旅をサポートします！</p>
+                            <h5>🗺️ 今日はどんなことをお手伝いしましょうか？</h5>
+                            <ul>
+                                <li><strong>都市案内</strong> - マラケシュ、フェズ、シャウエン、サハラ砂漠</li>
+                                <li><strong>グルメ情報</strong> - 本場のタジン、隠れた名店、屋台グルメ</li>
+                                <li><strong>旅行計画</strong> - ベストルート、予算相談、季節のアドバイス</li>
+                                <li><strong>文化体験</strong> - ベルベル文化、イスラム文化、伝統工芸</li>
+                            </ul>
+                            <p><strong>遠慮なく何でもお聞きください！</strong> 😊</p>
+                        </div>
                     </div>
                 </div>
                 
                 <!-- 提案ボタン -->
                 <div class="mt-3">
-                    <small class="text-muted">よくある質問:</small><br>
-                    <div class="btn-group-vertical w-100 mt-2" id="suggestions">
-                        <!-- 動的に読み込み -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <small class="text-muted fw-bold">💡 おすすめの質問:</small>
+                            <div class="chat-suggestions mt-2" id="popularSuggestions">
+                                <!-- 人気の質問 -->
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted fw-bold">🎲 ランダムに探す:</small>
+                            <div class="chat-suggestions mt-2" id="randomSuggestions">
+                                <!-- ランダム質問 -->
+                            </div>
+                            <button class="btn btn-outline-info btn-sm mt-2" onclick="loadRandomSuggestions()">
+                                <i class="fas fa-sync-alt"></i> 他の質問を見る
+                            </button>
+                        </div>
                     </div>
                 </div>
                 
@@ -32,11 +56,15 @@
                 <div class="mt-4">
                     <div class="input-group">
                         <input type="text" class="form-control" id="messageInput" 
-                               placeholder="メッセージを入力..." onkeypress="handleKeyPress(event)">
+                               placeholder="例：マラケシュでおすすめのリヤドは？" onkeypress="handleKeyPress(event)">
                         <button class="btn btn-primary" onclick="sendMessage()" id="sendButton">
                             <i class="fas fa-paper-plane"></i> 送信
                         </button>
                     </div>
+                    <small class="text-muted">
+                        <i class="fas fa-lightbulb"></i> 
+                        上のボタンをクリックするか、直接質問を入力してください
+                    </small>
                 </div>
             </div>
         </div>
@@ -46,6 +74,8 @@
 
 {% block scripts %}
 <script>
+let allSuggestions = [];
+
 document.addEventListener('DOMContentLoaded', function() {
     loadSuggestions();
 });
@@ -56,23 +86,57 @@ async function loadSuggestions() {
         const data = await response.json();
         
         if (data.success) {
-            const suggestionsContainer = document.getElementById('suggestions');
-            suggestionsContainer.innerHTML = '';
-            
-            data.suggestions.forEach(suggestion => {
-                const button = document.createElement('button');
-                button.className = 'btn btn-outline-secondary btn-sm mb-2';
-                button.textContent = suggestion;
-                button.onclick = () => {
-                    document.getElementById('messageInput').value = suggestion;
-                    sendMessage();
-                };
-                suggestionsContainer.appendChild(button);
-            });
+            allSuggestions = data.suggestions;
+            displayPopularSuggestions();
+            loadRandomSuggestions();
         }
     } catch (error) {
         console.error('提案の読み込みに失敗:', error);
     }
+}
+
+function displayPopularSuggestions() {
+    const container = document.getElementById('popularSuggestions');
+    container.innerHTML = '';
+    
+    // 人気の質問（最初の6個）
+    const popularQuestions = allSuggestions.slice(0, 6);
+    
+    popularQuestions.forEach(suggestion => {
+        const button = createSuggestionButton(suggestion);
+        container.appendChild(button);
+    });
+}
+
+function loadRandomSuggestions() {
+    const container = document.getElementById('randomSuggestions');
+    container.innerHTML = '';
+    
+    // ランダムに6個選択（人気の質問以外から）
+    const otherSuggestions = allSuggestions.slice(6);
+    const randomSuggestions = getRandomElements(otherSuggestions, 6);
+    
+    randomSuggestions.forEach(suggestion => {
+        const button = createSuggestionButton(suggestion);
+        container.appendChild(button);
+    });
+}
+
+function createSuggestionButton(suggestion) {
+    const button = document.createElement('button');
+    button.className = 'btn btn-outline-primary btn-sm mb-2 me-2';
+    button.textContent = suggestion;
+    button.style.cssText = 'font-size: 0.75rem; border-radius: 20px; padding: 0.4rem 0.8rem;';
+    button.onclick = () => {
+        document.getElementById('messageInput').value = suggestion;
+        sendMessage();
+    };
+    return button;
+}
+
+function getRandomElements(array, count) {
+    const shuffled = [...array].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, count);
 }
 
 function handleKeyPress(event) {
@@ -130,13 +194,76 @@ function addMessageToChat(message, type) {
     messageDiv.className = `chat-message ${type}`;
     
     if (type === 'user') {
-        messageDiv.innerHTML = `<strong>あなた:</strong><br>${message}`;
+        messageDiv.innerHTML = `<strong>🫵 あなた:</strong><br>${escapeHtml(message)}`;
     } else {
-        messageDiv.innerHTML = `<strong>AI案内:</strong><br>${message}`;
+        const formattedMessage = formatBotResponse(message);
+        messageDiv.innerHTML = `<strong>🤖 AI案内:</strong><br><div class="formatted-response">${formattedMessage}</div>`;
     }
     
     chatContainer.appendChild(messageDiv);
     chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+function formatBotResponse(message) {
+    // HTMLエスケープを最初に実行
+    let formatted = escapeHtml(message);
+    
+    // Markdownライクなフォーマッティング
+    
+    // 絵文字付きヘッダー（**🌟 テキスト** → h4）
+    formatted = formatted.replace(/\*\*([🌟🎯🗺️🏛️🍽️🚅💰📅🛡️🇲🇦🌡️🕌🎭🔍📍🎨🎪🍀🌙🎊].*?)\*\*/g, '<h4>$1</h4>');
+    
+    // 通常のボールドヘッダー（**テキスト:** → h5）
+    formatted = formatted.replace(/\*\*([^🎯🗺️🏛️🍽️🚅💰📅🛡️🇲🇦🌡️🕌🎭🔍📍🎨🎪🍀🌙🎊]*?):\*\*/g, '<h5>$1:</h5>');
+    
+    // 残りのボールドテキスト（**テキスト** → strong）
+    formatted = formatted.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
+    
+    // 箇条書き（• テキスト → li）
+    formatted = formatted.replace(/^• (.+?)$/gm, '<li>$1</li>');
+    
+    // 連続するliタグをulで囲む
+    formatted = formatted.replace(/(<li>.*?<\/li>)(?:\n<li>.*?<\/li>)*/g, function(match) {
+        return '<ul>' + match.replace(/\n/g, '') + '</ul>';
+    });
+    
+    // 数字付きリスト（1. テキスト → li）
+    formatted = formatted.replace(/^(\d+)\. (.+?)$/gm, '<li>$2</li>');
+    
+    // セクション区切り（複数の改行を区切りに変換）
+    formatted = formatted.replace(/\n\n\n+/g, '<div class="section-divider"></div>');
+    
+    // 段落（二重改行）
+    formatted = formatted.replace(/\n\n/g, '</p><p>');
+    formatted = '<p>' + formatted + '</p>';
+    
+    // 単一改行をbrに変換
+    formatted = formatted.replace(/(?<!<\/[^>]+>)\n(?![<])/g, '<br>');
+    
+    // 空の段落を削除
+    formatted = formatted.replace(/<p><\/p>/g, '');
+    formatted = formatted.replace(/<p>\s*<\/p>/g, '');
+    
+    // 重要な情報をハイライト（DH通貨、時間、温度など）
+    formatted = formatted.replace(/(\d+(?:-\d+)?(?:DH|ディルハム|円|度|時間|日間|°C))/g, '<span class="highlight">$1</span>');
+    
+    // 時刻のハイライト
+    formatted = formatted.replace(/(\d{1,2}:\d{2}(?:-\d{1,2}:\d{2})?)/g, '<span class="highlight">$1</span>');
+    
+    // 重要なキーワードのハイライト
+    const keywords = ['おすすめ', 'ベストシーズン', '注意', '必須', 'ガイドのコツ', '混雑回避', '節約のコツ', '撮影ポイント', 'おもてなし'];
+    keywords.forEach(keyword => {
+        const regex = new RegExp(`(${keyword})`, 'gi');
+        formatted = formatted.replace(regex, '<strong class="text-primary">$1</strong>');
+    });
+    
+    return formatted;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 </script>
 {% endblock %}

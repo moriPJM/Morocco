@@ -9,6 +9,7 @@ from backend.api.routes import api_bp
 from backend.api.spots import spots_bp
 from backend.api.chat import chat_bp
 from backend.api.maps import maps_bp
+from backend.api.routes_api import routes_bp
 from backend.services.database import init_db
 import os
 
@@ -30,6 +31,7 @@ def create_app():
     app.register_blueprint(spots_bp, url_prefix='/api/spots')
     app.register_blueprint(chat_bp, url_prefix='/api/chat')
     app.register_blueprint(maps_bp, url_prefix='/api/maps')
+    app.register_blueprint(routes_bp, url_prefix='/api/routes')
     
     # メインルート
     @app.route('/')
