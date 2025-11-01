@@ -2,7 +2,19 @@
 
 A React TypeScript web application for Morocco travel with comprehensive features including AI-powered guidance, advanced translation with speech synthesis, and beautiful interactive guides.
 
+## 🚀 **Main Entry Point**
+**Python Backend**: `start.py`
+- **Full-stack application** with Python Flask backend + React frontend
+- **Main file path**: `C:\Users\user\Documents\Morocco\start.py`
+- **Quick start**: `python start.py`
+
 ## ✨ Latest Features (November 2024)
+
+### 🐍 **Python Backend Integration**
+- **Flask Server**: Python-powered backend with OpenAI integration
+- **Auto Build**: Automatic React build and Python server startup
+- **Unified Entry**: Single command launch for full application
+- **API Endpoints**: `/api/chat`, `/api/health` for backend services
 
 ### 🎤 **Advanced Speech Features**
 - **Multi-language Speech Synthesis**: Japanese, English, Arabic text-to-speech
