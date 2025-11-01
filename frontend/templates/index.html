@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <!-- ヒーローセクション -->
+    <div class="col-12 mb-4">
+        <div class="hero-section bg-gradient p-5 rounded text-white text-center">
+            <h1 class="display-4 mb-3">🇲🇦 モロッコへようこそ</h1>
+            <p class="lead">魅力的な観光地、美しい風景、豊かな文化を発見しましょう</p>
+            <div class="row mt-4">
+                <div class="col-md-8 mx-auto">
+                    <div class="input-group">
+                        <input type="text" class="form-control form-control-lg" placeholder="観光地を検索..." id="searchInput">
+                        <button class="btn btn-warning btn-lg" type="button" onclick="searchSpots()">
+                            <i class="fas fa-search"></i> 検索
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- おすすめ観光地 -->
+    <div class="col-lg-8">
+        <h3><i class="fas fa-star text-warning"></i> おすすめ観光地</h3>
+        <div class="row" id="recommendedSpots">
+            <!-- 動的に読み込み -->
+        </div>
+        
+        <!-- カテゴリー別表示 -->
+        <div class="mt-4">
+            <h4>カテゴリー別に探す</h4>
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <div class="card category-card" onclick="filterByCategory('historical')">
+                        <div class="card-body text-center">
+                            <i class="fas fa-mosque fa-3x text-primary mb-2"></i>
+                            <h6>歴史的建造物</h6>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card category-card" onclick="filterByCategory('nature')">
+                        <div class="card-body text-center">
+                            <i class="fas fa-mountain fa-3x text-success mb-2"></i>
+                            <h6>自然・景観</h6>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card category-card" onclick="filterByCategory('market')">
+                        <div class="card-body text-center">
+                            <i class="fas fa-shopping-bag fa-3x text-warning mb-2"></i>
+                            <h6>マーケット</h6>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card category-card" onclick="filterByCategory('culture')">
+                        <div class="card-body text-center">
+                            <i class="fas fa-palette fa-3x text-info mb-2"></i>
+                            <h6>文化・芸術</h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- サイドバー -->
+    <div class="col-lg-4">
+        <!-- クイックアクセス -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5><i class="fas fa-rocket"></i> クイックアクセス</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('chat') }}" class="btn btn-primary">
+                        <i class="fas fa-robot"></i> AI観光案内
+                    </a>
+                    <a href="{{ url_for('routes') }}" class="btn btn-success">
+                        <i class="fas fa-route"></i> おすすめルート
+                    </a>
+                    <button class="btn btn-info" onclick="showMap()">
+                        <i class="fas fa-map"></i> 地図を表示
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 現地情報 -->
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle"></i> 現地情報</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>通貨:</strong> モロッコ・ディルハム (MAD)</p>
+                <p><strong>言語:</strong> アラビア語、ベルベル語、フランス語</p>
+                <p><strong>時差:</strong> 日本より8時間遅れ</p>
+                <p><strong>気候:</strong> 地中海性気候〜砂漠気候</p>
+                <a href="{{ url_for('info') }}" class="btn btn-outline-primary btn-sm">詳細を見る</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- マップモーダル -->
+<div class="modal fade" id="mapModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">モロッコ観光マップ</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="map" style="height: 500px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadRecommendedSpots();
+});
+
+function loadRecommendedSpots() {
+    fetch('/api/spots/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displaySpots(data.data);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+function displaySpots(spots) {
+    const container = document.getElementById('recommendedSpots');
+    container.innerHTML = '';
+    
+    spots.forEach(spot => {
+        const spotCard = `
+            <div class="col-md-6 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h6 class="card-title">${spot.name}</h6>
+                        <p class="card-text text-muted small">${spot.city} · ${spot.category}</p>
+                        <p class="card-text">${spot.description}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-warning">
+                                ${'★'.repeat(Math.floor(spot.rating))} ${spot.rating}
+                            </small>
+                            <button class="btn btn-outline-primary btn-sm" onclick="viewSpotDetail(${spot.id})">
+                                詳細
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        container.innerHTML += spotCard;
+    });
+}
+
+function searchSpots() {
+    const query = document.getElementById('searchInput').value;
+    // 検索機能の実装
+    console.log('Searching for:', query);
+}
+
+function filterByCategory(category) {
+    // カテゴリーフィルターの実装
+    console.log('Filtering by category:', category);
+}
+
+function viewSpotDetail(spotId) {
+    window.location.href = `/spots/${spotId}`;
+}
+
+function showMap() {
+    const mapModal = new bootstrap.Modal(document.getElementById('mapModal'));
+    mapModal.show();
+    // 地図の初期化（Google Maps API使用時）
+}
+</script>
+{% endblock %}

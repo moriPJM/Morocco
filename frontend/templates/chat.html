@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}AI観光案内 - モロッコ観光ガイド{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-robot text-primary"></i> AI観光案内チャット</h4>
+                <p class="mb-0 text-muted">モロッコの観光について何でもお聞きください</p>
+            </div>
+            <div class="card-body">
+                <!-- チャット表示エリア -->
+                <div class="chat-container" id="chatContainer">
+                    <div class="chat-message bot">
+                        <strong>AI案内:</strong><br>
+                        こんにちは！モロッコ観光のAI案内です🇲🇦<br>
+                        観光地、文化、気候、交通など、何でもお聞きください！
+                    </div>
+                </div>
+                
+                <!-- 提案ボタン -->
+                <div class="mt-3">
+                    <small class="text-muted">よくある質問:</small><br>
+                    <div class="btn-group-vertical w-100 mt-2" id="suggestions">
+                        <!-- 動的に読み込み -->
+                    </div>
+                </div>
+                
+                <!-- 入力エリア -->
+                <div class="mt-4">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="messageInput" 
+                               placeholder="メッセージを入力..." onkeypress="handleKeyPress(event)">
+                        <button class="btn btn-primary" onclick="sendMessage()" id="sendButton">
+                            <i class="fas fa-paper-plane"></i> 送信
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadSuggestions();
+});
+
+async function loadSuggestions() {
+    try {
+        const response = await fetch('/api/chat/suggestions');
+        const data = await response.json();
+        
+        if (data.success) {
+            const suggestionsContainer = document.getElementById('suggestions');
+            suggestionsContainer.innerHTML = '';
+            
+            data.suggestions.forEach(suggestion => {
+                const button = document.createElement('button');
+                button.className = 'btn btn-outline-secondary btn-sm mb-2';
+                button.textContent = suggestion;
+                button.onclick = () => {
+                    document.getElementById('messageInput').value = suggestion;
+                    sendMessage();
+                };
+                suggestionsContainer.appendChild(button);
+            });
+        }
+    } catch (error) {
+        console.error('提案の読み込みに失敗:', error);
+    }
+}
+
+function handleKeyPress(event) {
+    if (event.key === 'Enter') {
+        sendMessage();
+    }
+}
+
+async function sendMessage() {
+    const messageInput = document.getElementById('messageInput');
+    const message = messageInput.value.trim();
+    
+    if (!message) return;
+    
+    // ユーザーメッセージを表示
+    addMessageToChat(message, 'user');
+    messageInput.value = '';
+    
+    // 送信ボタンを無効化
+    const sendButton = document.getElementById('sendButton');
+    sendButton.disabled = true;
+    sendButton.innerHTML = '<div class="loading"></div>';
+    
+    try {
+        // AIに送信
+        const response = await fetch('/api/chat/message', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ message })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // AI応答を表示
+            addMessageToChat(data.response, 'bot');
+        } else {
+            addMessageToChat('エラーが発生しました。もう一度お試しください。', 'bot');
+        }
+    } catch (error) {
+        console.error('メッセージ送信エラー:', error);
+        addMessageToChat('通信エラーが発生しました。', 'bot');
+    } finally {
+        // 送信ボタンを有効化
+        sendButton.disabled = false;
+        sendButton.innerHTML = '<i class="fas fa-paper-plane"></i> 送信';
+    }
+}
+
+function addMessageToChat(message, type) {
+    const chatContainer = document.getElementById('chatContainer');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `chat-message ${type}`;
+    
+    if (type === 'user') {
+        messageDiv.innerHTML = `<strong>あなた:</strong><br>${message}`;
+    } else {
+        messageDiv.innerHTML = `<strong>AI案内:</strong><br>${message}`;
+    }
+    
+    chatContainer.appendChild(messageDiv);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+</script>
+{% endblock %}

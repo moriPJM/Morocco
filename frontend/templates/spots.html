@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block title %}観光スポット - モロッコ観光ガイド{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2><i class="fas fa-map-marker-alt text-primary"></i> 観光スポット</h2>
+        
+        <!-- 検索・フィルター -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="spotSearch" placeholder="スポット名で検索...">
+                            <button class="btn btn-primary" onclick="searchSpots()">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="categoryFilter" onchange="filterSpots()">
+                            <option value="">すべてのカテゴリー</option>
+                            <option value="historical">歴史的建造物</option>
+                            <option value="nature">自然・景観</option>
+                            <option value="market">マーケット</option>
+                            <option value="culture">文化・芸術</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="cityFilter" onchange="filterSpots()">
+                            <option value="">すべての都市</option>
+                            <option value="マラケシュ">マラケシュ</option>
+                            <option value="フェズ">フェズ</option>
+                            <option value="カサブランカ">カサブランカ</option>
+                            <option value="シャウエン">シャウエン</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- スポット一覧 -->
+        <div class="row" id="spotsContainer">
+            <!-- 動的に読み込み -->
+        </div>
+        
+        <!-- ページネーション -->
+        <nav aria-label="スポットページネーション">
+            <ul class="pagination justify-content-center" id="pagination">
+                <!-- 動的に生成 -->
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<!-- スポット詳細モーダル -->
+<div class="modal fade" id="spotDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="spotDetailTitle"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="spotDetailBody">
+                <!-- 詳細情報を動的に読み込み -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">閉じる</button>
+                <button type="button" class="btn btn-primary" id="addToRouteBtn">ルートに追加</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentSpots = [];
+let currentPage = 1;
+const spotsPerPage = 6;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadSpots();
+});
+
+async function loadSpots() {
+    try {
+        const response = await fetch('/api/spots/');
+        const data = await response.json();
+        
+        if (data.success) {
+            currentSpots = data.data;
+            displaySpots(currentSpots);
+        }
+    } catch (error) {
+        console.error('スポットの読み込みに失敗:', error);
+    }
+}
+
+function displaySpots(spots) {
+    const container = document.getElementById('spotsContainer');
+    container.innerHTML = '';
+    
+    // ページネーション計算
+    const startIndex = (currentPage - 1) * spotsPerPage;
+    const endIndex = startIndex + spotsPerPage;
+    const paginatedSpots = spots.slice(startIndex, endIndex);
+    
+    paginatedSpots.forEach(spot => {
+        const isFavorite = app.isFavorite(spot.id.toString());
+        const favoriteClass = isFavorite ? 'active' : '';
+        const favoriteIcon = isFavorite ? 'fas' : 'far';
+        
+        const spotCard = `
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="card-title">${spot.name}</h6>
+                            <button class="favorite-btn ${favoriteClass}" data-spot-id="${spot.id}">
+                                <i class="${favoriteIcon} fa-heart"></i>
+                            </button>
+                        </div>
+                        <p class="card-text text-muted small">
+                            <i class="fas fa-map-marker-alt"></i> ${spot.city} · ${spot.category}
+                        </p>
+                        <p class="card-text">${spot.description.substring(0, 100)}...</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-warning">
+                                ${app.renderStars(spot.rating)} ${spot.rating}
+                            </small>
+                            <button class="btn btn-outline-primary btn-sm" onclick="viewSpotDetail(${spot.id})">
+                                詳細
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        container.innerHTML += spotCard;
+    });
+    
+    updatePagination(spots.length);
+}
+
+function updatePagination(totalSpots) {
+    const totalPages = Math.ceil(totalSpots / spotsPerPage);
+    const pagination = document.getElementById('pagination');
+    pagination.innerHTML = '';
+    
+    for (let i = 1; i <= totalPages; i++) {
+        const pageItem = `
+            <li class="page-item ${i === currentPage ? 'active' : ''}">
+                <a class="page-link" href="#" onclick="changePage(${i})">${i}</a>
+            </li>
+        `;
+        pagination.innerHTML += pageItem;
+    }
+}
+
+function changePage(page) {
+    currentPage = page;
+    displaySpots(currentSpots);
+}
+
+async function viewSpotDetail(spotId) {
+    try {
+        const response = await fetch(`/api/spots/${spotId}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            const spot = data.data;
+            
+            document.getElementById('spotDetailTitle').textContent = spot.name;
+            document.getElementById('spotDetailBody').innerHTML = `
+                <div class="row">
+                    <div class="col-12">
+                        <p><strong>説明:</strong> ${spot.description}</p>
+                        <p><strong>営業時間:</strong> ${spot.opening_hours}</p>
+                        <p><strong>入場料:</strong> ${spot.entry_fee}</p>
+                        <p><strong>ベストシーズン:</strong> ${spot.best_time_to_visit}</p>
+                    </div>
+                </div>
+            `;
+            
+            const modal = new bootstrap.Modal(document.getElementById('spotDetailModal'));
+            modal.show();
+        }
+    } catch (error) {
+        console.error('スポット詳細の取得に失敗:', error);
+    }
+}
+
+function searchSpots() {
+    const searchTerm = document.getElementById('spotSearch').value.toLowerCase();
+    const filteredSpots = currentSpots.filter(spot => 
+        spot.name.toLowerCase().includes(searchTerm) ||
+        spot.description.toLowerCase().includes(searchTerm)
+    );
+    currentPage = 1;
+    displaySpots(filteredSpots);
+}
+
+function filterSpots() {
+    const category = document.getElementById('categoryFilter').value;
+    const city = document.getElementById('cityFilter').value;
+    
+    let filteredSpots = currentSpots;
+    
+    if (category) {
+        filteredSpots = filteredSpots.filter(spot => spot.category.includes(category));
+    }
+    
+    if (city) {
+        filteredSpots = filteredSpots.filter(spot => spot.city === city);
+    }
+    
+    currentPage = 1;
+    displaySpots(filteredSpots);
+}
+</script>
+{% endblock %}
