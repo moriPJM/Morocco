@@ -5,7 +5,7 @@ Streamlit Cloud用メインファイル
 """
 
 import streamlit as st
-import openai
+from openai import OpenAI
 import os
 from dotenv import load_dotenv
 
@@ -21,7 +21,8 @@ st.set_page_config(
 )
 
 # OpenAI設定
-openai.api_key = os.getenv('VITE_OPENAI_API_KEY') or st.secrets.get("OPENAI_API_KEY")
+api_key = os.getenv('VITE_OPENAI_API_KEY') or st.secrets.get("OPENAI_API_KEY")
+client = OpenAI(api_key=api_key) if api_key else None
 
 def main():
     """メインアプリケーション"""
@@ -75,7 +76,7 @@ def show_ai_guide():
     """AIガイド"""
     st.header("🤖 AI Travel Assistant")
     
-    if not openai.api_key:
+    if not client:
         st.error("❌ OpenAI API key not found. Please set OPENAI_API_KEY in secrets.")
         return
     
@@ -101,7 +102,7 @@ def show_ai_guide():
         with st.chat_message("assistant"):
             with st.spinner("回答を生成中..."):
                 try:
-                    response = openai.ChatCompletion.create(
+                    response = client.chat.completions.create(
                         model="gpt-3.5-turbo",
                         messages=[
                             {"role": "system", "content": """あなたはモロッコ旅行の専門ガイドです。
