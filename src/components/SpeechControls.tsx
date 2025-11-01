@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { speakText, recognizeSpeech, isSpeechSynthesisSupported, isSpeechRecognitionSupported, stopSpeech, languageSettings, logAvailableVoices } from '../utils/speechUtils';
+import React, { useState, useEffect, memo } from 'react';
+import { speakText, recognizeSpeech, isSpeechSynthesisSupported, isSpeechRecognitionSupported, stopSpeech, languageSettings } from '../utils/speechUtils';
+import { speakArabicEnhanced } from '../utils/enhancedSpeechUtils';
 
 interface SpeechControlsProps {
   text: string;
@@ -32,12 +33,17 @@ const SpeechControls: React.FC<SpeechControlsProps> = ({
       setError(null);
       setIsSpeaking(true);
       
-      // デバッグ: 利用可能な音声を表示
+      // アラビア語の場合は強化されたシステムを使用
       if (language === 'ar') {
-        console.log('アラビア語音声再生を試行中...');
-        logAvailableVoices();
+        console.log('強化アラビア語音声再生を試行中...');
+        await speakArabicEnhanced(text, {
+          enableFallback: true,
+          maxRetries: 2
+        });
+        return;
       }
       
+      // その他の言語は従来のシステム
       const langSettings = languageSettings[language as keyof typeof languageSettings];
       if (!langSettings) {
         throw new Error('対応していない言語です');
@@ -169,4 +175,4 @@ const SpeechControls: React.FC<SpeechControlsProps> = ({
   );
 };
 
-export default SpeechControls;
+export default memo(SpeechControls);

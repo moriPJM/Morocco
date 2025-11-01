@@ -71,12 +71,28 @@ export const speakText = (text: string, options: SpeechOptions): Promise<void> =
         }
       }
 
-      window.speechSynthesis.speak(utterance);
+      // ブラウザによってはユーザーインタラクション直後でないと音声が再生されない
+      try {
+        window.speechSynthesis.speak(utterance);
+        console.log('音声再生コマンド実行');
+      } catch (error) {
+        console.error('音声再生エラー:', error);
+        reject(new Error('音声再生に失敗しました。ブラウザの音声設定を確認してください。'));
+      }
     };
 
     // 音声リストが読み込まれていない場合は待機
     if (window.speechSynthesis.getVoices().length === 0) {
+      console.log('音声リスト読み込み待機中...');
       window.speechSynthesis.onvoiceschanged = loadVoices;
+      // 2秒でタイムアウト
+      setTimeout(() => {
+        if (window.speechSynthesis.getVoices().length === 0) {
+          console.warn('音声リスト読み込みタイムアウト');
+          // それでも試行
+          loadVoices();
+        }
+      }, 2000);
     } else {
       loadVoices();
     }

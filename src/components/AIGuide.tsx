@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback, memo } from 'react'
 
 interface Message {
   id: string
@@ -35,7 +35,7 @@ const AIGuide: React.FC = () => {
   }, [messages])
 
   // Python バックエンドのAI APIを使用した応答の取得
-  const getAIResponse = async (userInput: string): Promise<string> => {
+  const getAIResponse = useCallback(async (userInput: string): Promise<string> => {
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -58,7 +58,7 @@ const AIGuide: React.FC = () => {
       console.error('API Error:', error)
       return "ネットワークエラーが発生しました。サーバーとの接続を確認してください。"
     }
-  }
+  }, [])
 
   // メッセージ送信処理
   const handleSendMessage = async () => {
@@ -179,4 +179,4 @@ const AIGuide: React.FC = () => {
   )
 }
 
-export default AIGuide
+export default memo(AIGuide)

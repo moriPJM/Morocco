@@ -10,7 +10,8 @@ const resources = {
         translator: '翻訳',
         guides: 'ガイド',
         map: 'マップ',
-        favorites: 'お気に入り'
+        favorites: 'お気に入り',
+        voicetest: '音声テスト'
       },
       home: {
         welcome: 'モロッコへようこそ',
@@ -133,7 +134,8 @@ const resources = {
         translator: 'Translator',
         guides: 'Guides',
         map: 'Map',
-        favorites: 'Favorites'
+        favorites: 'Favorites',
+        voicetest: 'Voice Test'
       },
       home: {
         welcome: 'Welcome to Morocco',
@@ -189,7 +191,8 @@ const resources = {
         translator: 'Traducteur',
         guides: 'Guides',
         map: 'Carte',
-        favorites: 'Favoris'
+        favorites: 'Favoris',
+        voicetest: 'Test Vocal'
       },
       home: {
         welcome: 'Bienvenue au Maroc',
@@ -226,7 +229,8 @@ const resources = {
         translator: 'المترجم',
         guides: 'الأدلة',
         map: 'الخريطة',
-        favorites: 'المفضلة'
+        favorites: 'المفضلة',
+        voicetest: 'اختبار الصوت'
       },
       home: {
         welcome: 'مرحباً بكم في المغرب',

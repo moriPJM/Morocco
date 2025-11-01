@@ -23,6 +23,7 @@ const Navigation = ({ currentLang, onLanguageChange }: NavigationProps) => {
     { path: '/guides', key: 'guides', icon: '📖' },
     { path: '/map', key: 'map', icon: '🗺️' },
     { path: '/favorites', key: 'favorites', icon: '❤️' },
+    { path: '/voice-test', key: 'voicetest', icon: '🔊' },
   ]
 
   return (

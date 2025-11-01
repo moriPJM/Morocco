@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import SpeechControls from '../components/SpeechControls'
-import { speakText, languageSettings, speakArabic, speakMoroccanArabic } from '../utils/speechUtils'
+import { speakText, languageSettings } from '../utils/speechUtils'
+import { speakArabicEnhanced, speakMoroccanArabic } from '../utils/enhancedSpeechUtils'
 
 const Translator = () => {
   const { t } = useTranslation()
@@ -108,17 +109,23 @@ const Translator = () => {
     try {
       console.log(`フレーズ音声再生: "${text}" (言語: ${language})`);
       
-      // アラビア語の場合は専用関数を使用
+      // アラビア語の場合は強化された専用関数を使用
       if (language === 'ar') {
-        console.log('アラビア語専用関数を使用');
-        await speakArabic(text);
+        console.log('強化アラビア語専用関数を使用');
+        await speakArabicEnhanced(text, {
+          enableFallback: true,
+          maxRetries: 2
+        });
         return;
       }
       
       // モロッコアラビア語（ベルベル語代替）の場合
       if (language === 'ber') {
         console.log('モロッコアラビア語専用関数を使用');
-        await speakMoroccanArabic(text);
+        await speakMoroccanArabic(text, {
+          enableFallback: true,
+          maxRetries: 2
+        });
         return;
       }
       
