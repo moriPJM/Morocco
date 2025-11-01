@@ -11,7 +11,30 @@ from backend.api.chat import chat_bp
 from backend.api.maps import maps_bp
 from backend.api.routes_api import routes_bp
 from backend.services.database import init_db
+from dotenv import load_dotenv
 import os
+import socket
+
+# 環境変数を読み込み
+load_dotenv()
+
+def is_port_available(host, port):
+    """ポートが使用可能かチェック"""
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(1)
+        result = sock.connect_ex((host, port))
+        sock.close()
+        return result != 0
+    except Exception:
+        return False
+
+def find_available_port(host, start_port=5000, max_port=5010):
+    """使用可能なポートを検索"""
+    for port in range(start_port, max_port + 1):
+        if is_port_available(host, port):
+            return port
+    return None
 
 def create_app():
     """アプリケーションファクトリー"""
@@ -66,6 +89,31 @@ def create_app():
 
 if __name__ == "__main__":
     app = create_app()
-    print(" モロッコ観光ガイドアプリを起動中...")
-    print("🌐 http://localhost:5000 でアクセスできます")
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    
+    # サンプルデータの読み込み（開発環境のみ）
+    with app.app_context():
+        from data.sample_data import load_sample_data
+        try:
+            load_sample_data(app)
+            print("✅ サンプルデータを読み込みました")
+        except Exception as e:
+            print(f"⚠️ サンプルデータ読み込みエラー: {e}")
+    
+    # サーバー設定
+    host = '0.0.0.0'  # すべてのインターフェースでリッスン
+    port = find_available_port('127.0.0.1')
+    
+    if port is None:
+        print("❌ 使用可能なポートが見つかりません（5000-5010）")
+        exit(1)
+    
+    print("🌐 モロッコ観光ガイドアプリを起動中...")
+    print(f"🌐 http://localhost:{port} でアクセスできます")
+    print(f"🔧 Starting Flask server on {host}:{port}...")
+    
+    try:
+        app.run(debug=False, host=host, port=port, threaded=True, use_reloader=False)
+    except Exception as e:
+        print(f"❌ サーバー起動エラー: {e}")
+        import traceback
+        traceback.print_exc()

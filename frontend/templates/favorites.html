@@ -46,7 +46,7 @@
         
         <!-- 統計情報 -->
         <div class="row mt-4" id="favoritesStats" style="display: none;">
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <div class="card text-center">
                     <div class="card-body">
                         <h3 class="text-primary" id="totalFavorites">0</h3>
@@ -54,7 +54,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <div class="card text-center">
                     <div class="card-body">
                         <h3 class="text-success" id="totalCities">0</h3>
@@ -62,15 +62,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card text-center">
-                    <div class="card-body">
-                        <h3 class="text-info" id="averageRating">0</h3>
-                        <p class="card-text">平均評価</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <div class="card text-center">
                     <div class="card-body">
                         <h3 class="text-warning" id="recommendedDays">0</h3>
@@ -170,7 +162,6 @@ function loadAllSpots() {
             name: 'ジャマ・エル・フナ広場',
             city: 'マラケシュ',
             category: '広場・市場',
-            rating: 4.5,
             description: 'マラケシュの中心部にある賑やかな広場'
         },
         {
@@ -178,7 +169,6 @@ function loadAllSpots() {
             name: 'サハラ砂漠',
             city: 'メルズーガ',
             category: '自然',
-            rating: 4.8,
             description: '世界最大の砂漠でのラクダツアー体験'
         },
         {
@@ -186,7 +176,6 @@ function loadAllSpots() {
             name: 'シャウエン',
             city: 'シャウエン',
             category: '都市・建築',
-            rating: 4.7,
             description: '青い街として有名な美しい山間の町'
         }
     ];
@@ -230,10 +219,7 @@ function displayFavorites() {
                             <i class="fas fa-map-marker-alt"></i> ${spot.city} · ${spot.category}
                         </p>
                         <p class="card-text">${spot.description}</p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <small class="text-warning">
-                                ${'★'.repeat(Math.floor(spot.rating))} ${spot.rating}
-                            </small>
+                        <div class="d-flex justify-content-end">
                             <button class="btn btn-outline-primary btn-sm" onclick="viewSpotDetail(${spot.id})">
                                 詳細
                             </button>
@@ -259,12 +245,10 @@ function updateStats() {
     // 統計計算
     const totalCount = favoriteSpots.length;
     const cities = [...new Set(favoriteSpots.map(spot => spot.city))];
-    const avgRating = (favoriteSpots.reduce((sum, spot) => sum + spot.rating, 0) / totalCount).toFixed(1);
     const recommendedDays = Math.max(3, Math.min(14, totalCount * 1.5));
     
     document.getElementById('totalFavorites').textContent = totalCount;
     document.getElementById('totalCities').textContent = cities.length;
-    document.getElementById('averageRating').textContent = avgRating;
     document.getElementById('recommendedDays').textContent = Math.round(recommendedDays);
 }
 
@@ -309,10 +293,7 @@ function searchFavorites() {
                             <i class="fas fa-map-marker-alt"></i> ${spot.city} · ${spot.category}
                         </p>
                         <p class="card-text">${spot.description}</p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <small class="text-warning">
-                                ${'★'.repeat(Math.floor(spot.rating))} ${spot.rating}
-                            </small>
+                        <div class="d-flex justify-content-end">
                             <button class="btn btn-outline-primary btn-sm" onclick="viewSpotDetail(${spot.id})">
                                 詳細
                             </button>

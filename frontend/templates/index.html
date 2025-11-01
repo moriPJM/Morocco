@@ -3,16 +3,16 @@
 {% block content %}
 <div class="row">
     <!-- ヒーローセクション -->
-    <div class="col-12 mb-5">
-        <div class="hero-section p-5 rounded text-white text-center" style="background: #e74c3c !important; background: linear-gradient(135deg, #e74c3c 0%, #c0392b 50%, #8e44ad 100%) !important; color: white !important; min-height: 300px;">
-            <h1 class="display-3 mb-4 fw-bold text-white" style="color: white !important; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">モロッコへようこそ</h1>
-            <p class="lead fs-4 mb-4 text-white" style="color: white !important; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);">魅力的な観光地、美しい風景、豊かな文化を発見しましょう</p>
-            <div class="row mt-4">
+    <div class="col-12 mb-4">
+        <div class="hero-section p-4 rounded text-white text-center" style="background: #e74c3c !important; background: linear-gradient(135deg, #e74c3c 0%, #c0392b 50%, #8e44ad 100%) !important; color: white !important; min-height: 200px;">
+            <h1 class="h2 mb-3 fw-bold text-white" style="color: white !important; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">モロッコへようこそ</h1>
+            <p class="mb-3 text-white" style="color: white !important; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);">魅力的な観光地、美しい風景、豊かな文化を発見しましょう</p>
+            <div class="row mt-3">
                 <div class="col-lg-6 mx-auto">
-                    <div class="input-group input-group-lg shadow">
-                        <input type="text" class="form-control border-0" placeholder="観光地、都市名を検索..." id="searchInput" style="color: #333 !important; background-color: white !important;">
-                        <button class="btn btn-warning px-4" type="button" onclick="searchSpots()" style="color: white !important;">
-                            <i class="fas fa-search me-2"></i> 検索
+                    <div class="input-group shadow">
+                        <input type="text" class="form-control border-0" placeholder="観光地、都市名を検索..." id="searchInput" style="color: #333 !important; background-color: white !important;" onkeypress="if(event.key==='Enter') searchSpots()">
+                        <button class="btn btn-warning px-3" type="button" onclick="searchSpots()" style="color: white !important;">
+                            <i class="fas fa-search"></i>
                         </button>
                     </div>
                 </div>
@@ -24,12 +24,12 @@
 <div class="row">
     <!-- おすすめ観光地 -->
     <div class="col-lg-8">
-        <div class="mb-4">
-            <h3 class="h2 mb-3 text-dark">
+        <div class="mb-3">
+            <h3 class="h4 mb-2 text-dark">
                 <i class="fas fa-star text-warning me-2"></i>
                 おすすめ観光地
             </h3>
-            <p class="text-muted">モロッコで最も人気の観光スポットをご紹介</p>
+            <p class="text-muted small">モロッコで最も人気の観光スポット</p>
         </div>
         
         <div class="row" id="recommendedSpots">
@@ -37,68 +37,156 @@
         </div>
         
         <!-- カテゴリー別表示 -->
-        <div class="mt-5">
-            <h4 class="h3 mb-4 text-dark">カテゴリー別に探す</h4>
-            <div class="row g-3">
-                <div class="col-md-3 col-sm-6">
-                    <div class="card category-card h-100 border-0 shadow-sm" onclick="filterByCategory('historical')">
-                        <div class="card-body text-center p-4">
-                            <i class="fas fa-mosque fa-3x text-primary mb-3"></i>
-                            <h6 class="fw-bold text-dark">歴史的建造物</h6>
-                            <small class="text-muted">モスク、宮殿、遺跡</small>
+        <div class="mt-4">
+            <h4 class="h5 mb-3 text-dark">カテゴリー別に探す</h4>
+            <div class="row g-2">
+                <div class="col-md-3 col-6">
+                    <div class="card category-card h-100 border-0 shadow-sm" onclick="filterByCategory('宗教建築')">
+                        <div class="card-body text-center p-3">
+                            <i class="fas fa-mosque fa-2x text-primary mb-2"></i>
+                            <h6 class="fw-bold text-dark small">宗教建築</h6>
+                            <small class="text-muted">モスク、マドラサ</small>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3 col-sm-6">
-                    <div class="card category-card h-100 border-0 shadow-sm" onclick="filterByCategory('nature')">
-                        <div class="card-body text-center p-4">
-                            <i class="fas fa-mountain fa-3x text-success mb-3"></i>
-                            <h6 class="fw-bold text-dark">自然・景観</h6>
-                            <small class="text-muted">砂漠、山脈、海岸</small>
+                <div class="col-md-3 col-6">
+                    <div class="card category-card h-100 border-0 shadow-sm" onclick="filterByCategory('歴史建築')">
+                        <div class="card-body text-center p-3">
+                            <i class="fas fa-university fa-2x text-warning mb-2"></i>
+                            <h6 class="fw-bold text-dark small">歴史建築</h6>
+                            <small class="text-muted">宮殿、建造物</small>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3 col-sm-6">
-                    <div class="card category-card h-100 border-0 shadow-sm" onclick="filterByCategory('market')">
-                        <div class="card-body text-center p-4">
-                            <i class="fas fa-shopping-bag fa-3x text-warning mb-3"></i>
-                            <h6 class="fw-bold text-dark">マーケット</h6>
-                            <small class="text-muted">スーク、バザール</small>
+                <div class="col-md-3 col-6">
+                    <div class="card category-card h-100 border-0 shadow-sm" onclick="filterByCategory('自然')">
+                        <div class="card-body text-center p-3">
+                            <i class="fas fa-mountain fa-2x text-success mb-2"></i>
+                            <h6 class="fw-bold text-dark small">自然・景観</h6>
+                            <small class="text-muted">砂漠、山脈</small>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3 col-sm-6">
-                    <div class="card category-card h-100 border-0 shadow-sm" onclick="filterByCategory('culture')">
-                        <div class="card-body text-center p-4">
-                            <i class="fas fa-palette fa-3x text-info mb-3"></i>
-                            <h6 class="fw-bold text-dark">文化・芸術</h6>
-                            <small class="text-muted">博物館、ギャラリー</small>
+                <div class="col-md-3 col-6">
+                    <div class="card category-card h-100 border-0 shadow-sm" onclick="filterByCategory('広場・市場')">
+                        <div class="card-body text-center p-3">
+                            <i class="fas fa-store fa-2x text-danger mb-2"></i>
+                            <h6 class="fw-bold text-dark small">広場・市場</h6>
+                            <small class="text-muted">スーク、広場</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6 mt-2">
+                    <div class="card category-card h-100 border-0 shadow-sm" onclick="filterByCategory('庭園・公園')">
+                        <div class="card-body text-center p-3">
+                            <i class="fas fa-leaf fa-2x text-success mb-2"></i>
+                            <h6 class="fw-bold text-dark small">庭園・公園</h6>
+                            <small class="text-muted">庭園、公園</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6 mt-2">
+                    <div class="card category-card h-100 border-0 shadow-sm" onclick="filterByCategory('宮殿・建築')">
+                        <div class="card-body text-center p-3">
+                            <i class="fas fa-crown fa-2x text-warning mb-2"></i>
+                            <h6 class="fw-bold text-dark small">宮殿・建築</h6>
+                            <small class="text-muted">宮殿、邸宅</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6 mt-2">
+                    <div class="card category-card h-100 border-0 shadow-sm" onclick="filterByCategory('歴史地区')">
+                        <div class="card-body text-center p-3">
+                            <i class="fas fa-city fa-2x text-info mb-2"></i>
+                            <h6 class="fw-bold text-dark small">歴史地区</h6>
+                            <small class="text-muted">旧市街、メディナ</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6 mt-2">
+                    <div class="card category-card h-100 border-0 shadow-sm" onclick="filterByCategory('都市・建築')">
+                        <div class="card-body text-center p-3">
+                            <i class="fas fa-building fa-2x text-secondary mb-2"></i>
+                            <h6 class="fw-bold text-dark small">都市・建築</h6>
+                            <small class="text-muted">街並み、建築</small>
                         </div>
                     </div>
                 </div>
             </div>
+        
+        <!-- 都市別フィルター -->
+        <div class="mt-4" style="border: 2px solid red; padding: 10px;">
+            <h4 class="h5 mb-3 text-dark" style="background-color: yellow;">都市別に探す</h4>
+            <div class="row g-2">
+                <div class="col-md-4 col-6">
+                    <button class="btn btn-outline-primary btn-sm w-100" onclick="filterByCity('マラケシュ')">
+                        <i class="fas fa-city me-1"></i>マラケシュ
+                    </button>
+                </div>
+                <div class="col-md-4 col-6">
+                    <button class="btn btn-outline-info btn-sm w-100" onclick="filterByCity('フェズ')">
+                        <i class="fas fa-city me-1"></i>フェズ
+                    </button>
+                </div>
+                <div class="col-md-4 col-6">
+                    <button class="btn btn-outline-success btn-sm w-100" onclick="filterByCity('シャウエン')">
+                        <i class="fas fa-city me-1"></i>シャウエン
+                    </button>
+                </div>
+                <div class="col-md-4 col-6">
+                    <button class="btn btn-outline-warning btn-sm w-100" onclick="filterByCity('カサブランカ')">
+                        <i class="fas fa-city me-1"></i>カサブランカ
+                    </button>
+                </div>
+                <div class="col-md-4 col-6">
+                    <button class="btn btn-outline-danger btn-sm w-100" onclick="filterByCity('メルズーガ')">
+                        <i class="fas fa-city me-1"></i>メルズーガ
+                    </button>
+                </div>
+                <div class="col-md-4 col-6">
+                    <button class="btn btn-outline-secondary btn-sm w-100" onclick="filterByCity('ラバト')">
+                        <i class="fas fa-city me-1"></i>ラバト
+                    </button>
+                </div>
+                <div class="col-md-4 col-6 mt-2">
+                    <button class="btn btn-outline-dark btn-sm w-100" onclick="filterByCity('エッサウィラ')">
+                        <i class="fas fa-city me-1"></i>エッサウィラ
+                    </button>
+                </div>
+                <div class="col-md-4 col-6 mt-2">
+                    <button class="btn btn-outline-primary btn-sm w-100" onclick="filterByCity('ワルザザード')">
+                        <i class="fas fa-city me-1"></i>ワルザザード
+                    </button>
+                </div>
+                <div class="col-md-4 col-6 mt-2">
+                    <button class="btn btn-outline-info btn-sm w-100" onclick="filterByCity('メクネス')">
+                        <i class="fas fa-city me-1"></i>メクネス
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
+</div>
 
     <!-- サイドバー -->
     <div class="col-lg-4">
         <!-- クイックアクセス -->
-        <div class="card border-0 shadow-sm mb-4">
-            <div class="card-header bg-white border-0 pb-2">
-                <h5 class="mb-0 text-dark">
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-header bg-white border-0 py-2">
+                <h5 class="mb-0 text-dark small">
                     <i class="fas fa-rocket text-primary me-2"></i>
                     クイックアクセス
                 </h5>
             </div>
             <div class="card-body pt-2">
-                <div class="d-grid gap-3">
-                    <a href="{{ url_for('chat') }}" class="btn btn-primary btn-lg">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('chat') }}" class="btn btn-primary">
                         <i class="fas fa-robot me-2"></i> AI観光案内
                     </a>
-                    <a href="{{ url_for('routes') }}" class="btn btn-success btn-lg">
+                    <a href="{{ url_for('routes') }}" class="btn btn-success">
                         <i class="fas fa-route me-2"></i> おすすめルート
                     </a>
-                    <button class="btn btn-info btn-lg" onclick="showMap()">
+                    <button class="btn btn-info" onclick="showMap()">
                         <i class="fas fa-map me-2"></i> 地図を表示
                     </button>
                 </div>
@@ -107,47 +195,47 @@
 
         <!-- 現地情報 -->
         <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-0 pb-2">
-                <h5 class="mb-0 text-dark">
+            <div class="card-header bg-white border-0 py-2">
+                <h5 class="mb-0 text-dark small">
                     <i class="fas fa-info-circle text-info me-2"></i>
                     現地情報
                 </h5>
             </div>
             <div class="card-body pt-2">
-                <div class="row g-3">
+                <div class="row g-2">
                     <div class="col-6">
                         <div class="text-center p-2">
-                            <i class="fas fa-coins text-warning mb-2"></i>
+                            <i class="fas fa-coins text-warning mb-1"></i>
                             <div class="small text-muted">通貨</div>
-                            <div class="fw-bold small text-dark">モロッコ・ディルハム</div>
+                            <div class="fw-bold small text-dark">ディルハム</div>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="text-center p-2">
-                            <i class="fas fa-language text-primary mb-2"></i>
+                            <i class="fas fa-language text-primary mb-1"></i>
                             <div class="small text-muted">言語</div>
-                            <div class="fw-bold small text-dark">アラビア語・フランス語</div>
+                            <div class="fw-bold small text-dark">アラビア語</div>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="text-center p-2">
-                            <i class="fas fa-clock text-success mb-2"></i>
+                            <i class="fas fa-clock text-success mb-1"></i>
                             <div class="small text-muted">時差</div>
-                            <div class="fw-bold small text-dark">日本より8時間遅れ</div>
+                            <div class="fw-bold small text-dark">-8時間</div>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="text-center p-2">
-                            <i class="fas fa-thermometer-half text-danger mb-2"></i>
+                            <i class="fas fa-thermometer-half text-danger mb-1"></i>
                             <div class="small text-muted">気候</div>
-                            <div class="fw-bold small text-dark">地中海性〜砂漠性</div>
+                            <div class="fw-bold small text-dark">乾燥〜温暖</div>
                         </div>
                     </div>
                 </div>
-                <div class="mt-3 text-center">
-                    <a href="{{ url_for('info') }}" class="btn btn-outline-primary">
+                <div class="mt-2 text-center">
+                    <a href="{{ url_for('info') }}" class="btn btn-outline-primary btn-sm">
                         <i class="fas fa-external-link-alt me-1"></i>
-                        詳細を見る
+                        詳細
                     </a>
                 </div>
             </div>
@@ -178,43 +266,51 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function loadRecommendedSpots() {
+    console.log('Loading recommended spots...');
     fetch('/api/spots/')
         .then(response => response.json())
         .then(data => {
+            console.log('API Response:', data);
             if (data.success) {
+                console.log('Spots received:', data.data.length);
                 displaySpots(data.data);
+            } else {
+                console.error('API Error:', data);
             }
         })
         .catch(error => console.error('Error:', error));
 }
 
 function displaySpots(spots) {
+    console.log('Displaying spots:', spots.length);
     const container = document.getElementById('recommendedSpots');
     container.innerHTML = '';
     
-    spots.forEach((spot, index) => {
+    // より多くのスポットを表示して豊富な観光情報を提供
+    // ランダムシャッフルで毎回異なるスポットを表示
+    const shuffledSpots = [...spots].sort(() => Math.random() - 0.5);
+    const spotsToShow = shuffledSpots.slice(0, 18); // 18個のスポットを表示
+    console.log('Actually showing:', spotsToShow.length);
+    
+    spotsToShow.forEach((spot, index) => {
         const spotCard = `
-            <div class="col-md-6 mb-4">
-                <div class="card h-100 border-0 shadow-sm" style="animation-delay: ${0.1 * (index + 1)}s">
-                    <div class="card-body p-4">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <h6 class="card-title fw-bold mb-0 text-dark">${spot.name}</h6>
-                            <button class="btn btn-outline-danger btn-sm" onclick="toggleFavorite(${spot.id})">
+            <div class="col-lg-4 col-md-6 col-sm-6 mb-4">
+                <div class="card h-100 border-0 shadow-sm tourism-card" style="animation-delay: ${0.05 * (index + 1)}s; transition: transform 0.3s ease;">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="card-title fw-bold mb-0 text-dark" style="font-size: 0.95rem;">${spot.name}</h6>
+                            <button class="btn btn-outline-danger btn-sm favorite-btn" onclick="toggleFavorite(${spot.id})" style="padding: 0.2rem 0.4rem; font-size: 0.8rem;">
                                 <i class="fas fa-heart"></i>
                             </button>
                         </div>
-                        <p class="card-text text-muted small mb-2">
+                        <p class="card-text text-muted small mb-2" style="font-size: 0.8rem;">
                             <i class="fas fa-map-marker-alt text-primary me-1"></i>
                             ${spot.city} · ${spot.category}
                         </p>
-                        <p class="card-text text-dark">${spot.description}</p>
-                        <div class="d-flex justify-content-between align-items-center mt-3">
-                            <div class="text-warning">
-                                ${'★'.repeat(Math.floor(spot.rating))}${'☆'.repeat(5-Math.floor(spot.rating))}
-                                <span class="small text-muted ms-1">${spot.rating}</span>
-                            </div>
-                            <button class="btn btn-outline-primary btn-sm" onclick="viewSpotDetail(${spot.id})">
-                                <i class="fas fa-info-circle me-1"></i>
+                        <p class="card-text text-dark small mb-3" style="font-size: 0.85rem; line-height: 1.4;">${spot.description ? spot.description.substring(0, 90) + '...' : 'モロッコの魅力的な観光スポットです。'}</p>
+                        <div class="d-flex justify-content-between align-items-center mt-auto">
+                            <small class="text-muted">${spot.best_time_to_visit || '通年'}</small>
+                            <button class="btn btn-outline-primary btn-sm" onclick="viewSpotDetail(${spot.id})" style="padding: 0.3rem 0.8rem; font-size: 0.8rem;">
                                 詳細
                             </button>
                         </div>
@@ -224,12 +320,71 @@ function displaySpots(spots) {
         `;
         container.innerHTML += spotCard;
     });
+    
+    // 「もっと見る」ボタンを追加
+    const moreButton = `
+        <div class="col-12 text-center mt-3">
+            <a href="/spots" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>もっと見る
+            </a>
+        </div>
+    `;
+    container.innerHTML += moreButton;
 }
 
+// CSSスタイルの追加でカードのUXを改善
+document.addEventListener('DOMContentLoaded', function() {
+    const style = document.createElement('style');
+    style.textContent = `
+        .tourism-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+        }
+        
+        .favorite-btn:hover {
+            background-color: #dc3545;
+            color: white;
+            border-color: #dc3545;
+        }
+        
+        @media (max-width: 768px) {
+            .col-sm-6 {
+                flex: 0 0 50%;
+                max-width: 50%;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .col-sm-6 {
+                flex: 0 0 100%;
+                max-width: 100%;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+});
+
 function searchSpots() {
-    const query = document.getElementById('searchInput').value;
-    // 検索機能の実装
-    console.log('Searching for:', query);
+    app.performSearch();
+}
+
+function clearSearch() {
+    // 検索結果をクリアしておすすめスポットに戻る
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) searchInput.value = '';
+    
+    const searchResults = document.getElementById('searchResults');
+    if (searchResults) {
+        searchResults.remove();
+    }
+    
+    const recommendedContainer = document.getElementById('recommendedSpots')?.parentElement;
+    if (recommendedContainer) {
+        recommendedContainer.style.display = 'block';
+    }
+    
+    // おすすめスポットを再読み込み
+    loadRecommendedSpots();
 }
 
 function filterByCategory(category) {
@@ -281,5 +436,22 @@ function showMap() {
     mapModal.show();
     // 地図の初期化（Google Maps API使用時）
 }
+
+// アプリケーションの初期化
+let app;
+document.addEventListener('DOMContentLoaded', function() {
+    app = new MoroccoTourismApp();
+    console.log('App initialized:', app);
+});
+
+// リアルタイム情報機能の読み込み
+document.addEventListener('DOMContentLoaded', function() {
+    const script = document.createElement('script');
+    script.src = '/static/js/realtime.js';
+    script.onload = function() {
+        console.log('Realtime info widget loaded');
+    };
+    document.head.appendChild(script);
+});
 </script>
 {% endblock %}
