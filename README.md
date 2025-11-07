@@ -1,183 +1,105 @@
-# 🇲🇦 モロッコ観光ガイドアプリ
+# 🕌 モロッコ観光ガイド - Morocco Tourism Guide
 
-Flask + Bootstrap を使用したモロッコ観光ガイドWebアプリケーション
+Streamlitで作成されたインタラクティブなモロッコ観光ガイドアプリです。
 
-## 📋 機能
+## 🌟 特徴
 
-- **🏠 ホーム画面**: おすすめ観光地とカテゴリー別検索
-- **📍 観光スポット**: 詳細情報、検索、フィルタリング
-- **🗺️ 地図表示**: Google Maps統合（予定）
-- **🤖 AI観光案内**: チャットベースの観光情報提供
-- **❤️ お気に入り**: ユーザーのお気に入りスポット管理
-- **🛣️ ルートプランナー**: おすすめ旅行ルート
-- **ℹ️ 現地情報**: 通貨、気候、文化情報
-- **⚙️ 設定**: 多言語対応（日本語/英語/フランス語）
+- **インタラクティブマップ**: Foliumを使用した観光地マップ
+- **観光地情報**: 12の主要観光地の詳細情報
+- **AI観光ガイド**: OpenAI APIを使用したチャットボット機能
+- **フィルタリング**: 都市やカテゴリによる絞り込み機能
+- **レスポンシブデザイン**: モバイル対応
+
+## 🗺️ 対象都市
+
+- マラケシュ (Marrakech)
+- カサブランカ (Casablanca)
+- フェズ (Fez)
+- メルズーガ (Merzouga)
+- シャウエン (Chefchaouen)
+- エッサウィラ (Essaouira)
+
+## 🚀 デプロイ
+
+このアプリはStreamlit Shareでデプロイされています。
+
+### Streamlit Shareでのデプロイ手順
+
+1. GitHubリポジトリにコードをプッシュ
+2. Streamlit Shareにアクセス
+3. リポジトリを選択
+4. `streamlit_app.py`をメインファイルとして指定
+5. デプロイ開始
+
+## 🔧 ローカル実行
+
+```bash
+# 依存関係のインストール
+pip install -r requirements.txt
+
+# アプリケーション実行
+streamlit run streamlit_app.py
+```
+
+## 📁 ファイル構成
+
+```
+morocco/
+├── streamlit_app.py      # メインアプリケーション
+├── requirements.txt      # 依存関係
+├── .streamlit/
+│   └── config.toml      # Streamlit設定
+└── README.md            # このファイル
+```
 
 ## 🛠️ 技術スタック
 
-### バックエンド
-- **Flask**: Webフレームワーク
-- **SQLAlchemy**: ORM
-- **SQLite**: データベース（開発用）
+- **Frontend**: Streamlit
+- **Map**: Folium + streamlit-folium
+- **AI**: OpenAI API
+- **Data**: Pandas
+- **Deployment**: Streamlit Share
 
-### フロントエンド
-- **Bootstrap 5**: UIフレームワーク
-- **Font Awesome**: アイコン
-- **Vanilla JavaScript**: インタラクション
+## 🔑 環境変数
 
-### AI機能（予定）
-- **OpenAI API**: チャット機能
-- **LangChain**: RAG実装
-- **ChromaDB**: ベクトルデータベース
-
-## 🚀 セットアップ
-
-### 1. 仮想環境の作成・有効化
-
-```powershell
-# 仮想環境作成（既に作成済み）
-python -m venv .venv
-
-# 仮想環境有効化
-.\.venv\Scripts\Activate.ps1
-```
-
-### 2. 依存関係のインストール
-
-```powershell
-pip install -r requirements.txt
-```
-
-### 3. データベース初期化
-
-```powershell
-python -c "from app import create_app; from data.sample_data import load_sample_data; app = create_app(); load_sample_data(app)"
-```
-
-### 4. アプリケーション起動
-
-```powershell
-python app.py
-```
-
-アプリケーションが http://localhost:5000 で起動します。
-
-## 📁 プロジェクト構造
+AI機能を使用する場合は、以下の環境変数を設定してください：
 
 ```
-morroco/
-├── app.py                 # メインアプリケーション
-├── requirements.txt       # 依存関係
-├── .gitignore            # Git除外設定
-├── README.md             # このファイル
-├── backend/              # バックエンドコード
-│   ├── api/              # APIエンドポイント
-│   │   ├── routes.py     # メインルート
-│   │   ├── spots.py      # 観光スポットAPI
-│   │   ├── chat.py       # チャットAPI
-│   │   └── maps.py       # 地図API
-│   ├── models/           # データモデル
-│   │   └── tourism.py    # 観光データモデル
-│   └── services/         # サービス層
-│       └── database.py   # DB設定
-├── frontend/             # フロントエンド
-│   ├── templates/        # HTMLテンプレート
-│   │   ├── base.html     # ベーステンプレート
-│   │   ├── index.html    # ホーム画面
-│   │   ├── spots.html    # 観光スポット画面
-│   │   └── chat.html     # チャット画面
-│   └── static/           # 静的ファイル
-│       ├── css/
-│       │   └── style.css # メインスタイル
-│       └── js/
-│           └── app.js    # メインJavaScript
-├── data/                 # データ関連
-│   └── sample_data.py    # サンプルデータ
-└── config/               # 設定ファイル
+OPENAI_API_KEY=your_openai_api_key_here
 ```
 
-## 🔧 開発コマンド
+## 📊 観光地データ
 
-```powershell
-# 開発サーバー起動
-python app.py
+アプリに含まれる観光地：
 
-# データベースリセット
-python data/sample_data.py
+### マラケシュ
+- ジャマ・エル・フナ広場
+- クトゥビア・モスク
+- バイア宮殿
+- マジョレル庭園
+- サーディアン朝の墳墓群
 
-# 依存関係更新
-pip freeze > requirements.txt
+### カサブランカ
+- ハッサン2世モスク
+- リック・カフェ
 
-# テスト実行（今後実装）
-python -m pytest
-
-# 本番ビルド（今後実装）
-python build.py
-```
-
-## 🌐 API エンドポイント
-
-### 観光スポット
-- `GET /api/spots/` - スポット一覧
-- `GET /api/spots/<id>` - スポット詳細
-- `GET /api/spots/search?q=<query>` - スポット検索
-
-### チャット
-- `POST /api/chat/message` - メッセージ送信
-- `GET /api/chat/suggestions` - 提案取得
-
-### 地図
-- `GET /api/maps/markers` - マーカー情報
-- `GET /api/maps/route` - ルート情報
+### フェズ
+- フェズ・エル・バリ
+- カラウィーン大学
 
 ### その他
-- `GET /api/health` - ヘルスチェック
+- エルグ・シェビ砂丘（メルズーガ）
+- シャウエン旧市街
+- エッサウィラ・メディナ
 
-## 📋 今後の実装予定
+## 📝 ライセンス
 
-- [ ] Google Maps API統合
-- [ ] OpenAI ChatGPT API統合
-- [ ] RAGシステム実装
-- [ ] ユーザー認証
-- [ ] レビュー・評価機能
-- [ ] オフラインモード
-- [ ] PWA対応
-- [ ] 多言語対応完成
-- [ ] 管理画面
-- [ ] テストコード
+MIT License
 
-## 🎨 カスタマイズ
+## 🤝 貢献
 
-### カラーテーマ
-モロッコの国旗をイメージしたカラーパレットを使用：
-- 赤: `#C41E3A` (Morocco Red)
-- 緑: `#006233` (Morocco Green)  
-- 金: `#FFD700` (Morocco Gold)
-
-### API設定
-環境変数で各種API設定が可能：
-```powershell
-$env:OPENAI_API_KEY="your-openai-key"
-$env:GOOGLE_MAPS_API_KEY="your-maps-key"
-$env:DATABASE_URL="sqlite:///morocco_guide.db"
-```
-
-## 🤝 コントリビューション
-
-1. このリポジトリをフォーク
-2. 機能ブランチを作成 (`git checkout -b feature/amazing-feature`)
-3. 変更をコミット (`git commit -m 'Add amazing feature'`)
-4. ブランチにプッシュ (`git push origin feature/amazing-feature`)
-5. プルリクエストを作成
-
-## 📄 ライセンス
-
-このプロジェクトはMITライセンスの下で公開されています。
-
-## 📞 サポート
-
-質問や問題がある場合は、Issueを作成してください。
+プルリクエストや Issue の作成を歓迎します！
 
 ---
 
-**Enjoy exploring Morocco! 🇲🇦**
+Made with ❤️ and Streamlit
