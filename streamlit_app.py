@@ -712,23 +712,51 @@ def show_map_page(spots):
     """マップページ"""
     st.subheader("🗺️ モロッコ観光地マップ")
     
-    # フィルター
-    col1, col2 = st.columns(2)
+    # 高度なフィルター機能
+    st.markdown("### 🎯 マップフィルター")
+    
+    col1, col2, col3 = st.columns(3)
     
     with col1:
-        cities = ["すべて"] + sorted(set(spot['city'] for spot in spots))
-        selected_city = st.selectbox("都市で絞り込み", cities)
+        cities = sorted(set(spot['city'] for spot in spots))
+        selected_cities = st.multiselect(
+            "🏙️ 表示する都市（複数選択可）",
+            options=cities,
+            default=cities,  # デフォルトで全都市選択
+            placeholder="都市を選択"
+        )
     
     with col2:
-        categories = ["すべて"] + sorted(set(spot['category'] for spot in spots))
-        selected_category = st.selectbox("カテゴリで絞り込み", categories)
+        categories = sorted(set(spot['category'] for spot in spots))
+        selected_categories = st.multiselect(
+            "🎯 表示するカテゴリ（複数選択可）",
+            options=categories,
+            default=categories,  # デフォルトで全カテゴリ選択
+            placeholder="カテゴリを選択"
+        )
+    
+    with col3:
+        map_options = st.multiselect(
+            "⚙️ マップオプション",
+            options=["認定済みのみ", "詳細情報表示", "価格情報表示"],
+            default=["詳細情報表示"],
+            placeholder="オプションを選択"
+        )
     
     # フィルタリング
     filtered_spots = spots
-    if selected_city != "すべて":
-        filtered_spots = [spot for spot in filtered_spots if spot['city'] == selected_city]
-    if selected_category != "すべて":
-        filtered_spots = [spot for spot in filtered_spots if spot['category'] == selected_category]
+    
+    # 都市フィルター（複数選択）
+    if selected_cities:
+        filtered_spots = [spot for spot in filtered_spots if spot['city'] in selected_cities]
+    
+    # カテゴリフィルター（複数選択）
+    if selected_categories:
+        filtered_spots = [spot for spot in filtered_spots if spot['category'] in selected_categories]
+    
+    # 認定済みフィルター
+    if "認定済みのみ" in map_options:
+        filtered_spots = [spot for spot in filtered_spots if spot.get('verified', False)]
     
     # マップ作成
     if filtered_spots:
@@ -744,15 +772,37 @@ def show_map_page(spots):
         
         # マーカーを追加
         for spot in filtered_spots:
-            popup_html = f"""
-            <div style="width: 250px;">
-                <h4>{spot['name']}</h4>
-                <p><b>📍 {spot['city']}</b></p>
-                <p><b>🏷️ {spot['category']}</b></p>
-                {'<p><span style="background: #27ae60; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px;">✅ 認定済み</span></p>' if spot.get('verified') else ''}
-                <p>{spot['description'][:100]}...</p>
-            </div>
+            # 詳細情報の表示判定
+            show_details = "詳細情報表示" in map_options
+            show_price = "価格情報表示" in map_options
+            
+            # ポップアップHTMLの構築
+            popup_content = f"""
+            <div style="width: 300px; font-family: Arial, sans-serif;">
+                <h4 style="color: #2c3e50; margin-bottom: 8px;">{spot['name']}</h4>
+                <p style="margin: 4px 0;"><b>📍 {spot['city']}</b> • <b>🏷️ {spot['category']}</b></p>
             """
+            
+            if spot.get('verified'):
+                popup_content += '<p style="margin: 4px 0;"><span style="background: #27ae60; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px;">✅ 認定済み</span></p>'
+            
+            if show_details:
+                popup_content += f'<p style="margin: 8px 0; line-height: 1.4;">{spot["description"][:150]}...</p>'
+                
+                if spot.get('best_time'):
+                    popup_content += f'<p style="margin: 4px 0;"><b>⏰ ベストタイム:</b> {spot["best_time"]}</p>'
+                
+                if spot.get('duration'):
+                    popup_content += f'<p style="margin: 4px 0;"><b>⏱️ 所要時間:</b> {spot["duration"]}</p>'
+            else:
+                popup_content += f'<p style="margin: 8px 0; line-height: 1.4;">{spot["description"][:80]}...</p>'
+            
+            if show_price and spot.get('price_range'):
+                popup_content += f'<p style="margin: 4px 0;"><b>💰 料金:</b> {spot["price_range"]}</p>'
+            
+            popup_content += '</div>'
+            
+            popup_html = popup_content
             
             folium.Marker(
                 location=[spot['lat'], spot['lng']],
@@ -786,50 +836,171 @@ def show_spots_page(spots):
     """観光地一覧ページ"""
     st.subheader("📍 観光地一覧")
     
-    # 検索機能
-    search_term = st.text_input("🔍 観光地を検索", placeholder="名前や都市名で検索...")
+    # 高度な検索・フィルター機能
+    st.markdown("### 🔍 検索・フィルター")
     
-    # フィルター
-    col1, col2, col3 = st.columns(3)
+    # テキスト検索
+    search_term = st.text_input("🔍 観光地を検索", placeholder="名前や都市名、説明文で検索...")
+    
+    # フィルター（複数選択対応）
+    col1, col2 = st.columns(2)
     
     with col1:
-        cities = ["すべて"] + sorted(set(spot['city'] for spot in spots))
-        selected_city = st.selectbox("都市", cities)
+        cities = sorted(set(spot['city'] for spot in spots))
+        selected_cities = st.multiselect(
+            "🏙️ 都市を選択（複数選択可）",
+            options=cities,
+            default=[],
+            placeholder="都市を選択してください"
+        )
     
     with col2:
-        categories = ["すべて"] + sorted(set(spot['category'] for spot in spots))
-        selected_category = st.selectbox("カテゴリ", categories)
+        categories = sorted(set(spot['category'] for spot in spots))
+        selected_categories = st.multiselect(
+            "🎯 カテゴリを選択（複数選択可）",
+            options=categories,
+            default=[],
+            placeholder="カテゴリを選択してください"
+        )
+    
+    # 追加オプション
+    col3, col4, col5 = st.columns(3)
     
     with col3:
-        show_verified_only = st.checkbox("認定済みのみ表示")
+        show_verified_only = st.checkbox("✅ 認定済みのみ表示")
+    
+    with col4:
+        # 価格フィルター
+        price_filter = st.selectbox(
+            "💰 価格帯",
+            ["すべて", "無料", "有料（500円未満）", "有料（500円以上）"]
+        )
+    
+    with col5:
+        # 所要時間フィルター
+        duration_filter = st.selectbox(
+            "⏱️ 所要時間",
+            ["すべて", "短時間（1時間未満）", "中時間（1-3時間）", "長時間（3時間以上）"]
+        )
     
     # フィルタリング
     filtered_spots = spots
     
+    # テキスト検索（名前、都市、説明文を対象）
     if search_term:
         filtered_spots = [
             spot for spot in filtered_spots 
             if search_term.lower() in spot['name'].lower() or 
-               search_term.lower() in spot['city'].lower()
+               search_term.lower() in spot['city'].lower() or
+               search_term.lower() in spot['description'].lower()
         ]
     
-    if selected_city != "すべて":
-        filtered_spots = [spot for spot in filtered_spots if spot['city'] == selected_city]
+    # 都市フィルター（複数選択）
+    if selected_cities:
+        filtered_spots = [spot for spot in filtered_spots if spot['city'] in selected_cities]
     
-    if selected_category != "すべて":
-        filtered_spots = [spot for spot in filtered_spots if spot['category'] == selected_category]
+    # カテゴリフィルター（複数選択）
+    if selected_categories:
+        filtered_spots = [spot for spot in filtered_spots if spot['category'] in selected_categories]
     
+    # 認定済みフィルター
     if show_verified_only:
         filtered_spots = [spot for spot in filtered_spots if spot.get('verified', False)]
     
-    # 結果表示
-    st.write(f"**{len(filtered_spots)}件** の観光地が見つかりました")
+    # 価格フィルター
+    if price_filter != "すべて":
+        if price_filter == "無料":
+            filtered_spots = [spot for spot in filtered_spots if '無料' in spot.get('price_range', '')]
+        elif price_filter == "有料（500円未満）":
+            filtered_spots = [spot for spot in filtered_spots 
+                            if spot.get('price_range', '') and '無料' not in spot.get('price_range', '') 
+                            and any(keyword in spot.get('price_range', '') for keyword in ['10DH', '20DH', '30DH', '50DH'])]
+        elif price_filter == "有料（500円以上）":
+            filtered_spots = [spot for spot in filtered_spots 
+                            if spot.get('price_range', '') and any(keyword in spot.get('price_range', '') for keyword in ['70DH', '130DH', '150DH', '300DH'])]
     
-    # 観光地カード表示
+    # 所要時間フィルター
+    if duration_filter != "すべて":
+        if duration_filter == "短時間（1時間未満）":
+            filtered_spots = [spot for spot in filtered_spots 
+                            if spot.get('duration', '') and any(keyword in spot.get('duration', '') for keyword in ['30分', '45分'])]
+        elif duration_filter == "中時間（1-3時間）":
+            filtered_spots = [spot for spot in filtered_spots 
+                            if spot.get('duration', '') and any(keyword in spot.get('duration', '') for keyword in ['1時間', '2時間', '1-2時間', '1-3時間'])]
+        elif duration_filter == "長時間（3時間以上）":
+            filtered_spots = [spot for spot in filtered_spots 
+                            if spot.get('duration', '') and any(keyword in spot.get('duration', '') for keyword in ['半日', '1日', '2-3時間', '2日'])]
+    
+    # 検索結果の統計情報と操作ボタン
+    if filtered_spots:
+        st.markdown("---")
+        col1, col2, col3, col4, col5 = st.columns(5)
+        
+        with col1:
+            st.metric("🔍 検索結果", f"{len(filtered_spots)}件")
+        
+        with col2:
+            result_cities = set(spot['city'] for spot in filtered_spots)
+            st.metric("🏙️ 対象都市", f"{len(result_cities)}都市")
+        
+        with col3:
+            result_categories = set(spot['category'] for spot in filtered_spots)
+            st.metric("🎯 カテゴリ", f"{len(result_categories)}種類")
+        
+        with col4:
+            verified_count = sum(1 for spot in filtered_spots if spot.get('verified', False))
+            st.metric("✅ 認定済み", f"{verified_count}件")
+        
+        with col5:
+            # エクスポート機能
+            if st.button("📥 結果をCSVで保存"):
+                import pandas as pd
+                df = pd.DataFrame(filtered_spots)
+                csv = df.to_csv(index=False, encoding='utf-8-sig')
+                st.download_button(
+                    label="⬇️ CSVダウンロード",
+                    data=csv,
+                    file_name=f"morocco_spots_{len(filtered_spots)}件.csv",
+                    mime="text/csv"
+                )
+    
+    # ソート機能
+    if filtered_spots:
+        col1, col2 = st.columns([3, 1])
+        
+        with col1:
+            st.markdown("### 📋 検索結果一覧")
+        
+        with col2:
+            sort_option = st.selectbox(
+                "並び替え",
+                ["名前順", "都市順", "カテゴリ順", "認定優先"]
+            )
+    
+    # ソート処理
+    if sort_option == "名前順":
+        filtered_spots = sorted(filtered_spots, key=lambda x: x['name'])
+    elif sort_option == "都市順":
+        filtered_spots = sorted(filtered_spots, key=lambda x: x['city'])
+    elif sort_option == "カテゴリ順":
+        filtered_spots = sorted(filtered_spots, key=lambda x: x['category'])
+    elif sort_option == "認定優先":
+        filtered_spots = sorted(filtered_spots, key=lambda x: (not x.get('verified', False), x['name']))
+    
+    # 観光地カード表示（拡張版）
     cols = st.columns(2)
     for i, spot in enumerate(filtered_spots):
         with cols[i % 2]:
             with st.container():
+                # 追加情報の構築
+                additional_info = ""
+                if spot.get('best_time'):
+                    additional_info += f"<br>⏰ <strong>ベストタイム:</strong> {spot['best_time']}"
+                if spot.get('duration'):
+                    additional_info += f"<br>⏱️ <strong>所要時間:</strong> {spot['duration']}"
+                if spot.get('price_range'):
+                    additional_info += f"<br>💰 <strong>料金:</strong> {spot['price_range']}"
+                
                 st.markdown(f"""
                 <div class="spot-card">
                     <div class="spot-title">{spot['name']}</div>
@@ -837,8 +1008,43 @@ def show_spots_page(spots):
                         📍 {spot['city']} • <span class="category-badge">{spot['category']}</span>
                         {' • <span class="verified-badge">認定済み</span>' if spot.get('verified') else ''}
                     </div>
-                    <p>{spot['description']}</p>
+                    <p>{spot['description'][:200]}{'...' if len(spot['description']) > 200 else ''}</p>
+                    {additional_info}
                     <p><small>座標: {spot['lat']:.4f}, {spot['lng']:.4f}</small></p>
+                </div>
+                """, unsafe_allow_html=True)
+    else:
+        # 検索結果が0件の場合
+        st.warning("🔍 検索条件に一致する観光地が見つかりませんでした。")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.info("""
+            **検索のヒント:**
+            - より広い条件で検索してみてください
+            - 都市やカテゴリの選択を解除してみてください
+            - 検索キーワードを変更してみてください
+            """)
+        
+        with col2:
+            if st.button("🔄 フィルターをリセット"):
+                st.rerun()
+        
+        # おすすめ観光地を表示
+        st.markdown("### 🌟 おすすめ観光地")
+        recommended = [spot for spot in spots if spot.get('verified', False)][:4]
+        
+        cols = st.columns(2)
+        for i, spot in enumerate(recommended):
+            with cols[i % 2]:
+                st.markdown(f"""
+                <div class="spot-card" style="opacity: 0.8;">
+                    <div class="spot-title">{spot['name']}</div>
+                    <div class="spot-meta">
+                        📍 {spot['city']} • <span class="category-badge">{spot['category']}</span>
+                        <span class="verified-badge">認定済み</span>
+                    </div>
+                    <p>{spot['description'][:100]}...</p>
                 </div>
                 """, unsafe_allow_html=True)
 
