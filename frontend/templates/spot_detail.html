@@ -1,0 +1,743 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <!-- 戻るボタン -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <button class="btn btn-outline-secondary" onclick="goBack()">
+                <i class="fas fa-arrow-left me-2"></i>一覧に戻る
+            </button>
+        </div>
+    </div>
+
+    <!-- スポット詳細 -->
+    <div id="spotDetail">
+        <!-- 動的に読み込まれます -->
+    </div>
+
+    <!-- ローディング -->
+    <div id="loadingSpinner" class="text-center">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">読み込み中...</span>
+        </div>
+        <p class="mt-2 text-muted">観光地情報を読み込んでいます...</p>
+    </div>
+
+    <!-- エラー表示 -->
+    <div id="errorMessage" class="d-none">
+        <div class="alert alert-warning text-center">
+            <h4><i class="fas fa-exclamation-triangle me-2"></i>データを取得できませんでした</h4>
+            <p id="errorDetails">観光地情報の読み込みに失敗しました。ネットワーク接続やサーバーの状態をご確認ください。</p>
+            <div class="d-flex justify-content-center gap-2 mt-3">
+                <button id="retryButton" class="btn btn-primary">
+                    <i class="fas fa-redo me-2"></i>再試行
+                </button>
+                <button class="btn btn-outline-primary" onclick="goBack()">
+                    <i class="fas fa-arrow-left me-2"></i>一覧に戻る
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentSpot = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🌟 Morocco Tourism App - Spot Detail Page Loaded');
+    console.log('📍 Current URL:', window.location.href);
+    console.log('🌐 Navigator Online:', navigator.onLine);
+    
+    // サーバー接続テスト
+    fetch('/api/spots')
+        .then(response => {
+            console.log('✅ Server connection test successful:', response.status);
+            
+            // 実際のspot詳細読み込み
+            const spotId = getSpotIdFromUrl();
+            if (spotId) {
+                console.log('🆔 Spot ID from URL:', spotId);
+                loadSpotDetail(spotId);
+            } else {
+                console.error('❌ No spot ID found in URL');
+                updateErrorMessage('観光地IDが見つかりません', 'URLに問題があります');
+                showError();
+            }
+        })
+        .catch(error => {
+            console.error('❌ Server connection test failed:', error);
+            updateErrorMessage('サーバーに接続できません', 'アプリが起動しているか確認してください');
+            showError();
+        });
+});
+
+function getSpotIdFromUrl() {
+    const pathParts = window.location.pathname.split('/');
+    return pathParts[pathParts.length - 1];
+}
+
+function loadSpotDetail(spotId) {
+    showLoading(true);
+    
+    console.log(`🔍 Loading spot detail for ID: ${spotId}`);
+    
+    // ネットワーク接続状態をチェック
+    if (!navigator.onLine) {
+        showLoading(false);
+        updateErrorMessage('インターネット接続がありません', 'ネットワーク接続を確認してください');
+        showError();
+        return;
+    }
+    
+    // APIからデータを取得
+    fetch(`/api/spots/${spotId}`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        timeout: 10000 // 10秒のタイムアウト
+    })
+        .then(response => {
+            console.log(`API Response status: ${response.status}`);
+            console.log(`Response URL: ${response.url}`);
+            
+            if (!response.ok) {
+                if (response.status === 404) {
+                    throw new Error(`観光地ID ${spotId} が見つかりません`);
+                } else if (response.status === 500) {
+                    throw new Error(`サーバーエラーが発生しました (${response.status})`);
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            }
+            return response.json();
+        })
+        .then(spot => {
+            console.log('Spot data received:', spot);
+            
+            // データ検証
+            if (!spot) {
+                throw new Error('レスポンスデータがnullです');
+            }
+            if (typeof spot !== 'object') {
+                throw new Error('レスポンスが正しいJSON形式ではありません');
+            }
+            if (!spot.name) {
+                throw new Error('観光地名が含まれていません');
+            }
+            
+            currentSpot = spot;
+            displaySpotDetail(spot);
+            showLoading(false);
+        })
+        .catch(error => {
+            console.error('Error loading spot:', error);
+            console.error('Attempted URL:', `/api/spots/${spotId}`);
+            console.error('Current location:', window.location.href);
+            console.error('Error type:', typeof error);
+            console.error('Error stack:', error.stack);
+            
+            showLoading(false);
+            
+            // 詳細なエラーメッセージを作成
+            let errorMessage = 'データの読み込みに失敗しました';
+            let errorDetails = null;
+            
+            if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                errorMessage = 'ネットワーク接続エラーが発生しました';
+                errorDetails = 'サーバーに接続できません。アプリが起動しているか確認してください。';
+            } else if (error.message.includes('NetworkError') || error.message.includes('fetch')) {
+                errorMessage = 'ネットワーク接続エラーが発生しました';
+                errorDetails = 'インターネット接続を確認してください';
+            } else if (error.message.includes('404')) {
+                errorMessage = '指定された観光地が見つかりません';
+                errorDetails = `観光地ID: ${spotId}`;
+            } else if (error.message.includes('500')) {
+                errorMessage = 'サーバーエラーが発生しました';
+                errorDetails = '一時的な問題の可能性があります';
+            } else {
+                errorDetails = `エラー詳細: ${error.message}`;
+            }
+            
+            console.log('🚨 Displaying error to user:', errorMessage, errorDetails);
+            updateErrorMessage(errorMessage, errorDetails);
+            showError();
+            
+            // 自動復旧の提案
+            setTimeout(() => {
+                const retryButton = document.createElement('button');
+                retryButton.className = 'btn btn-primary mt-3';
+                retryButton.textContent = '再試行';
+                retryButton.onclick = () => {
+                    document.getElementById('errorMessage').classList.add('d-none');
+                    loadSpotDetail(spotId);
+                };
+                
+                const errorDiv = document.getElementById('errorMessage');
+                if (errorDiv && !errorDiv.querySelector('button')) {
+                    errorDiv.appendChild(retryButton);
+                }
+            }, 1000);
+        });
+}
+
+function displaySpotDetail(spot) {
+    const container = document.getElementById('spotDetail');
+    
+    // デフォルト値を設定
+    const safeSpot = {
+        name: spot.name || 'Unknown',
+        category: spot.category || 'その他',
+        city: spot.city || 'モロッコ',
+        description: spot.description || '詳細情報を準備中です。',
+        longDescription: spot.longDescription || spot.description || '詳細情報を準備中です。',
+        rating: spot.rating || 0,
+        price: spot.price || '情報なし',
+        duration: spot.duration || '1-2時間',
+        verified: spot.verified || false,
+        unesco: spot.unesco || false,
+        features: spot.features || [],
+        tips: spot.tips || [],
+        nearbySpots: spot.nearbySpots || [],
+        access: spot.access || {},
+        hours: spot.hours || { open: '情報なし', note: '' },
+        location: spot.location || { address: '住所情報なし', lat: 0, lng: 0 },
+        bestSeason: spot.bestSeason || '10月〜4月（涼しく過ごしやすい時期）',
+        avoidSeason: spot.avoidSeason || '7月〜8月（非常に暑くなるため、早朝・夕方の訪問を推奨）',
+        architecture: spot.architecture || 'イスラム建築の精緻な装飾、幾何学模様、書道芸術などが見どころです。',
+        cuisine: spot.cuisine || 'タジン、クスクス、ミントティーなど、モロッコの伝統料理を味わうことができます。',
+        photoSpots: spot.photoSpots || '美しい景色を撮影できる絶好のポイントが多数あります。特に夕日や朝日の時間帯がおすすめです。',
+        bestTime: spot.bestTime || '朝早い時間帯や夕方の涼しい時間がおすすめです。混雑を避けて静かに観光を楽しめます。',
+        activities: spot.activities || '現地ガイドによる案内ツアー、伝統工芸体験、地元料理の試食など様々なアクティビティが楽しめます。',
+        shopping: spot.shopping || '地元の伝統工芸品、香辛料、織物など、モロッコならではのお土産を購入できます。価格交渉も楽しみの一つです。',
+        history: spot.history || 'この地域は古くからベルベル人、アラブ人、ヨーロッパ人など様々な文化の交差点として栄えてきました。それぞれの文化が融合し、独特な建築様式や伝統が生まれています。イスラム建築の特徴的な装飾や、伝統的なモロッコのタイル（ゼリージュ）などを随所に見ることができます。',
+        culturalSignificance: spot.culturalSignificance || 'モロッコの文化遺産として重要な位置を占めており、現代でも地元住民の生活に深く根ざしています。伝統的な職人技術、音楽、料理などが受け継がれ、訪問者は生きた文化を体験することができます。'
+    };
+    
+    container.innerHTML = `
+        <!-- メイン情報とタイトル -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="position-relative">
+                    <div class="row">
+                        <div class="col-lg-8">
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h1 class="h3 mb-3">${safeSpot.name}</h1>
+                                    <div class="mb-3">
+                                        <span class="badge bg-primary me-2">${safeSpot.category}</span>
+                                        <span class="text-muted">
+                                            <i class="fas fa-map-marker-alt text-primary me-1"></i>
+                                            ${safeSpot.city}
+                                        </span>
+                                    </div>
+                                    <div class="mb-3">
+                                        ${safeSpot.verified ? '<span class="badge bg-success me-2"><i class="fas fa-check-circle me-1"></i>公式認定</span>' : ''}
+                                        ${safeSpot.unesco ? '<span class="badge bg-primary me-2"><i class="fas fa-globe me-1"></i>世界遺産</span>' : ''}
+                                    </div>
+                                    <p class="card-text">${safeSpot.description}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">アクション</h5>
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-success" onclick="askAIAboutSpot('${safeSpot.name}')">>
+                                            <i class="fas fa-robot me-2"></i>AIに質問する
+                                        </button>
+                                        <button class="btn btn-outline-primary" onclick="showOnMap()">
+                                            <i class="fas fa-map me-2"></i>地図で見る
+                                        </button>
+                                        <button class="btn btn-outline-secondary" onclick="shareSpot()">
+                                            <i class="fas fa-share me-2"></i>シェア
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 詳細情報タブ -->
+        <div class="row">
+            <div class="col-12">
+                <ul class="nav nav-tabs mb-4" id="detailTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" 
+                                type="button" role="tab">詳細情報</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="access-tab" data-bs-toggle="tab" data-bs-target="#access" 
+                                type="button" role="tab">アクセス・営業情報</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tips-tab" data-bs-toggle="tab" data-bs-target="#tips" 
+                                type="button" role="tab">観光ガイド</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="culture-tab" data-bs-toggle="tab" data-bs-target="#culture" 
+                                type="button" role="tab">文化・歴史</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="detailTabContent">
+                    <!-- 詳細情報タブ -->
+                    <div class="tab-pane fade show active" id="overview" role="tabpanel">
+                        <div class="row">
+                            <div class="col-lg-8">
+                                <h4 class="mb-3">詳細説明</h4>
+                                <p class="mb-4">${spot.longDescription}</p>
+                                
+                                <h5 class="mb-3">特徴・見どころ</h5>
+                                <div class="mb-4">
+                                    ${(spot.features || []).map(feature => `
+                                        <span class="badge bg-light text-dark me-2 mb-2">${feature}</span>
+                                    `).join('')}
+                                </div>
+
+                                <h5 class="mb-3">観光のポイント</h5>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <h6 class="card-title text-primary">
+                                                    <i class="fas fa-camera me-2"></i>撮影スポット
+                                                </h6>
+                                                <p class="card-text small">${spot.photoSpots || '美しい景色を撮影できる絶好のポイントが多数あります。特に夕日や朝日の時間帯がおすすめです。'}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <h6 class="card-title text-success">
+                                                    <i class="fas fa-clock me-2"></i>最適な時間帯
+                                                </h6>
+                                                <p class="card-text small">${spot.bestTime || '朝早い時間帯や夕方の涼しい時間がおすすめです。混雑を避けて静かに観光を楽しめます。'}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <h6 class="card-title text-warning">
+                                                    <i class="fas fa-users me-2"></i>体験アクティビティ
+                                                </h6>
+                                                <p class="card-text small">${spot.activities || '現地ガイドによる案内ツアー、伝統工芸体験、地元料理の試食など様々なアクティビティが楽しめます。'}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <h6 class="card-title text-info">
+                                                    <i class="fas fa-shopping-bag me-2"></i>お土産・買い物
+                                                </h6>
+                                                <p class="card-text small">${spot.shopping || '地元の伝統工芸品、香辛料、織物など、モロッコならではのお土産を購入できます。価格交渉も楽しみの一つです。'}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-4">
+                                <h5 class="mb-3">近隣の観光地</h5>
+                                ${(spot.nearbySpots || []).map(nearby => `
+                                    <div class="card mb-2">
+                                        <div class="card-body py-2">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <div class="fw-bold">${nearby.name}</div>
+                                                    <small class="text-muted">${nearby.category}</small>
+                                                </div>
+                                                <span class="badge bg-outline-primary">${nearby.distance}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                                
+                                <div class="card mt-4">
+                                    <div class="card-body">
+                                        <h6 class="card-title">
+                                            <i class="fas fa-info-circle text-primary me-2"></i>信頼性情報
+                                        </h6>
+                                        ${spot.verified ? '<p class="text-success small mb-2"><i class="fas fa-check-circle me-1"></i>公式認定観光地</p>' : ''}
+                                        <p class="text-muted small mb-0">この情報は現地観光局および信頼できる情報源に基づいて提供されています。</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- アクセス・営業情報タブ -->
+                    <div class="tab-pane fade" id="access" role="tabpanel">
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <h4 class="mb-3">アクセス方法</h4>
+                                ${Object.entries(spot.access || {}).map(([method, info]) => `
+                                    <div class="card mb-3">
+                                        <div class="card-body">
+                                            <h6 class="card-title text-primary">
+                                                <i class="fas fa-${getAccessIcon(method)} me-2"></i>
+                                                ${getAccessLabel(method)}
+                                            </h6>
+                                            <p class="card-text">${info}</p>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                                
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-warning">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>交通に関する注意点
+                                        </h6>
+                                        <ul class="small mb-0">
+                                            <li>道路状況は季節により変化する場合があります</li>
+                                            <li>公共交通機関の時刻表は変更される可能性があります</li>
+                                            <li>タクシー利用時は事前に料金を確認しましょう</li>
+                                            <li>レンタカーの場合は国際運転免許証が必要です</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <h4 class="mb-3">営業時間・位置情報</h4>
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <i class="fas fa-clock text-primary me-2"></i>
+                                            <span class="fw-bold">営業時間: </span>${safeSpot.hours.open}
+                                        </div>
+                                        <small class="text-muted">${safeSpot.hours.note}</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <i class="fas fa-map-marker-alt text-danger me-2"></i>
+                                            <span class="fw-bold">住所</span>
+                                        </div>
+                                        <p>${safeSpot.location.address}</p>
+                                        <div class="mb-3">
+                                            <small class="text-muted">緯度: ${safeSpot.location.lat}, 経度: ${safeSpot.location.lng}</small>
+                                        </div>
+                                        <div class="d-grid">
+                                            <button class="btn btn-primary" onclick="openInMaps()">
+                                                <i class="fas fa-external-link-alt me-2"></i>
+                                                Google マップで開く
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-info">
+                                            <i class="fas fa-calendar me-2"></i>シーズン情報
+                                        </h6>
+                                        <div class="small">
+                                            <p><strong>ベストシーズン:</strong> ${spot.bestSeason || '10月〜4月（涼しく過ごしやすい時期）'}</p>
+                                            <p><strong>注意が必要な時期:</strong> ${spot.avoidSeason || '7月〜8月（非常に暑くなるため、早朝・夕方の訪問を推奨）'}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 観光ガイドタブ -->
+                    <div class="tab-pane fade" id="tips" role="tabpanel">
+                        <h4 class="mb-3">観光のヒント・注意事項</h4>
+                        ${(spot.tips || []).map((tip, index) => `
+                            <div class="alert alert-info">
+                                <i class="fas fa-lightbulb text-warning me-2"></i>
+                                <strong>ヒント ${index + 1}:</strong> ${tip}
+                            </div>
+                        `).join('')}
+                        
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-success">
+                                            <i class="fas fa-thumbs-up me-2"></i>おすすめの準備
+                                        </h6>
+                                        <ul class="small">
+                                            <li>日焼け止めと帽子は必須アイテム</li>
+                                            <li>歩きやすい靴での訪問を推奨</li>
+                                            <li>カメラまたはスマートフォンの充電確認</li>
+                                            <li>現地通貨（ディルハム）の準備</li>
+                                            <li>水分補給用の飲み物</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-warning">
+                                            <i class="fas fa-exclamation-circle me-2"></i>文化的配慮
+                                        </h6>
+                                        <ul class="small">
+                                            <li>宗教的な場所では適切な服装を心がける</li>
+                                            <li>写真撮影前に許可を得る</li>
+                                            <li>現地の習慣や文化を尊重する</li>
+                                            <li>金曜日の祈りの時間帯への配慮</li>
+                                            <li>ラマダン期間中の特別な配慮</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 文化・歴史タブ -->
+                    <div class="tab-pane fade" id="culture" role="tabpanel">
+                        <h4 class="mb-3">歴史・文化的背景</h4>
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title text-primary">歴史</h5>
+                                <p>${spot.history || 'この地域は古くからベルベル人、アラブ人、ヨーロッパ人など様々な文化の交差点として栄えてきました。それぞれの文化が融合し、独特な建築様式や伝統が生まれています。イスラム建築の特徴的な装飾や、伝統的なモロッコのタイル（ゼリージュ）などを随所に見ることができます。'}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title text-success">文化的意義</h5>
+                                <p>${spot.culturalSignificance || 'モロッコの文化遺産として重要な位置を占めており、現代でも地元住民の生活に深く根ざしています。伝統的な職人技術、音楽、料理などが受け継がれ、訪問者は生きた文化を体験することができます。'}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-info">
+                                            <i class="fas fa-palette me-2"></i>芸術・建築
+                                        </h6>
+                                        <p class="small">${spot.architecture || 'イスラム建築の精緻な装飾、幾何学模様、書道芸術などが見どころです。モロッコ独特のアンダルシア様式の影響も随所に見られます。'}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-warning">
+                                            <i class="fas fa-utensils me-2"></i>料理・グルメ
+                                        </h6>
+                                        <p class="small">${spot.cuisine || 'タジン、クスクス、ミントティーなど、モロッコの伝統料理を味わうことができます。スパイスの効いた風味豊かな料理は多くの観光客に愛されています。'}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-light mt-4">
+                            <h6 class="alert-heading">
+                                <i class="fas fa-book me-2"></i>さらに詳しく学ぶには
+                            </h6>
+                            <p class="mb-0 small">現地のガイドツアーへの参加、博物館の見学、文化センターでのワークショップなどを通じて、より深くモロッコの文化と歴史について学ぶことができます。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function generateStars(rating) {
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 !== 0;
+    let stars = '';
+    
+    for (let i = 0; i < fullStars; i++) {
+        stars += '<i class="fas fa-star text-warning"></i>';
+    }
+    if (hasHalfStar) {
+        stars += '<i class="fas fa-star-half-alt text-warning"></i>';
+    }
+    const remainingStars = 5 - Math.ceil(rating);
+    for (let i = 0; i < remainingStars; i++) {
+        stars += '<i class="far fa-star text-warning"></i>';
+    }
+    
+    return `<span class="me-2">${stars}</span><span class="fw-bold text-warning">${rating}</span>`;
+}
+
+function getAccessIcon(method) {
+    const icons = {
+        walking: 'walking',
+        taxi: 'taxi',
+        bus: 'bus',
+        car: 'car',
+        tour: 'route',
+        flight: 'plane'
+    };
+    return icons[method] || 'info-circle';
+}
+
+function getAccessLabel(method) {
+    const labels = {
+        walking: '徒歩',
+        taxi: 'タクシー',
+        bus: 'バス',
+        car: '車',
+        tour: 'ツアー',
+        flight: '飛行機'
+    };
+    return labels[method] || method;
+}
+
+function showLoading(show) {
+    const spinner = document.getElementById('loadingSpinner');
+    const detail = document.getElementById('spotDetail');
+    
+    if (show) {
+        spinner.classList.remove('d-none');
+        detail.innerHTML = '';
+    } else {
+        spinner.classList.add('d-none');
+    }
+}
+
+function showError(message = null) {
+    document.getElementById('loadingSpinner').classList.add('d-none');
+    const errorDiv = document.getElementById('errorMessage');
+    errorDiv.classList.remove('d-none');
+    
+    // メッセージが指定されている場合は更新
+    if (message) {
+        updateErrorMessage(message);
+    }
+    
+    console.log('❌ Error displayed to user');
+    
+    console.error('Detailed error:', message);
+}
+
+function goBack() {
+    if (document.referrer && document.referrer.includes('/spots')) {
+        window.history.back();
+    } else {
+        window.location.href = '/spots';
+    }
+}
+
+function askAIAboutSpot(spotName) {
+    const message = `${spotName}について詳しく教えてください。観光のポイントや注意事項などを知りたいです。`;
+    window.location.href = `/ai?question=${encodeURIComponent(message)}`;
+}
+
+function showOnMap() {
+    if (currentSpot && currentSpot.location) {
+        window.location.href = `/map?lat=${currentSpot.location.lat}&lng=${currentSpot.location.lng}&name=${encodeURIComponent(currentSpot.name)}`;
+    }
+}
+
+function openInMaps() {
+    if (currentSpot && currentSpot.location) {
+        const url = `https://www.google.com/maps?q=${currentSpot.location.lat},${currentSpot.location.lng}`;
+        window.open(url, '_blank');
+    }
+}
+
+function shareSpot() {
+    if (navigator.share) {
+        navigator.share({
+            title: currentSpot.name,
+            text: currentSpot.description,
+            url: window.location.href
+        });
+    } else {
+        // フォールバック: URLをクリップボードにコピー
+        navigator.clipboard.writeText(window.location.href).then(() => {
+            alert('URLがクリップボードにコピーされました！');
+        });
+    }
+}
+
+function writeReview() {
+    alert('レビュー機能は今後実装予定です。');
+}
+
+// 再試行機能
+document.addEventListener('DOMContentLoaded', function() {
+    const retryButton = document.getElementById('retryButton');
+    if (retryButton) {
+        retryButton.addEventListener('click', function() {
+            // エラー表示を隠してローディングを表示
+            showElement('loadingSpinner');
+            hideElement('errorMessage');
+            hideElement('spotDetail');
+            
+            // URLからIDを取得して再読み込み
+            const urlPath = window.location.pathname;
+            const spotId = urlPath.split('/')[2];
+            
+            console.log('🔄 Retrying to load spot ID:', spotId);
+            
+            // 再試行
+            loadSpotDetail(spotId);
+        });
+    }
+});
+
+// エラー詳細の更新機能
+function updateErrorMessage(message, details = null) {
+    const errorDetails = document.getElementById('errorDetails');
+    if (errorDetails) {
+        let fullMessage = message;
+        if (details) {
+            fullMessage += `<br><small class="text-muted">詳細: ${details}</small>`;
+        }
+        errorDetails.innerHTML = fullMessage;
+    }
+}
+</script>
+
+<style>
+.carousel-control-prev,
+.carousel-control-next {
+    width: 5%;
+}
+
+.tab-content {
+    min-height: 400px;
+}
+
+.nav-tabs .nav-link {
+    color: var(--bs-secondary);
+    border: none;
+    border-bottom: 2px solid transparent;
+}
+
+.nav-tabs .nav-link.active {
+    color: var(--bs-primary);
+    background-color: transparent;
+    border-bottom-color: var(--bs-primary);
+}
+
+.badge.bg-outline-primary {
+    color: var(--bs-primary);
+    border: 1px solid var(--bs-primary);
+    background-color: transparent;
+}
+
+.alert {
+    border-radius: 10px;
+}
+
+.card {
+    border-radius: 10px;
+    border: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+</style>
+{% endblock %}

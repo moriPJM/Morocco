@@ -55,7 +55,7 @@ def spots():
     """観光地一覧ページ"""
     return render_template('spots.html')
 
-@app.route('/spot/<int:spot_id>')
+@app.route('/spots/<int:spot_id>')
 def spot_detail(spot_id):
     """観光地詳細ページ"""
     return render_template('spot_detail.html', spot_id=spot_id)
@@ -69,11 +69,6 @@ def map_page():
 def settings():
     """設定ページ"""
     return render_template('settings.html')
-
-@app.route('/favicon.ico')
-def favicon():
-    """Faviconを提供"""
-    return app.send_static_file('images/favicon.svg')
 
 @app.route('/api/health')
 def health_check():
@@ -100,29 +95,6 @@ def ai_test():
             'message': 'AI初期化エラー'
         }), 500
 
-@app.route('/api/ai/suggestions')
-def ai_suggestions():
-    """おすすめ質問を取得"""
-    try:
-        gpt_service = get_morocco_gpt()
-        suggestions = gpt_service.get_quick_suggestions()
-        return jsonify({
-            'success': True,
-            'suggestions': suggestions
-        })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'suggestions': [
-                "マラケシュでおすすめの観光スポットは？",
-                "モロッコ料理で絶対食べるべきものは？",
-                "サハラ砂漠ツアーについて教えて",
-                "3日間でモロッコを回るプランを提案して",
-                "モロッコ旅行の予算はいくら必要？"
-            ]
-        })
-
 @app.route('/api/ai/chat', methods=['POST'])
 def ai_chat():
     """AI チャットエンドポイント"""
@@ -136,23 +108,14 @@ def ai_chat():
             
         question = data['question']
         gpt_service = get_morocco_gpt()
-        result = gpt_service.get_morocco_guide_response(question)
+        answer = gpt_service.get_answer(question)
         
-        if result['success']:
-            return jsonify({
-                'success': True,
-                'question': question,
-                'response': result['response'],  # answerからresponseに変更
-                'usage': result.get('usage'),
-                'timestamp': datetime.now().isoformat()
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'error': result.get('error', 'AI応答エラー'),
-                'response': result['response'],
-                'timestamp': datetime.now().isoformat()
-            }), 500
+        return jsonify({
+            'success': True,
+            'question': question,
+            'answer': answer,
+            'timestamp': datetime.now().isoformat()
+        })
         
     except Exception as e:
         return jsonify({
@@ -624,25 +587,15 @@ def get_spot_detail(spot_id):
                 return jsonify(detailed_spot)
             else:
                 return jsonify({
-                    'success': False,
-                    'error': 'SPOT_NOT_FOUND',
-                    'error_code': 404,
-                    'message': '観光地が見つかりません',
-                    'details': f'観光地ID {spot_id} は存在しません。有効なIDは1-{len(spots)}です。',
-                    'available_spots': len(spots),
-                    'suggestion': '観光地一覧(/api/spots)から有効なIDを確認してください。'
+                    'error': '観光地が見つかりません',
+                    'message': f'ID {spot_id} の観光地は存在しません'
                 }), 404
 
     except Exception as e:
-        app.logger.error(f'Error fetching spot detail for ID {spot_id}: {str(e)}', exc_info=True)
         return jsonify({
             'success': False,
-            'error': 'INTERNAL_SERVER_ERROR',
-            'error_code': 500,
-            'message': '観光地詳細取得エラー',
-            'details': '内部サーバーエラーが発生しました。',
-            'timestamp': datetime.now().isoformat(),
-            'spot_id': spot_id
+            'error': str(e),
+            'message': '観光地詳細取得エラー'
         }), 500
 
 @app.route('/api/spots/recommended')
@@ -707,32 +660,6 @@ def get_categories():
             'message': 'カテゴリ一覧取得エラー'
         }), 500
 
-# エラーハンドラー
-@app.errorhandler(404)
-def not_found_error(error):
-    """404エラーハンドラー"""
-    return render_template('error.html', 
-                         error_code=404,
-                         error_message="ページが見つかりません",
-                         error_description="お探しのページは存在しないか、移動された可能性があります。"), 404
-
-@app.errorhandler(500)
-def internal_error(error):
-    """500エラーハンドラー"""
-    return render_template('error.html',
-                         error_code=500,
-                         error_message="内部サーバーエラー",
-                         error_description="サーバーで問題が発生しました。しばらくしてから再度お試しください。"), 500
-
-@app.errorhandler(Exception)
-def handle_exception(e):
-    """汎用エラーハンドラー"""
-    app.logger.error(f'Unhandled exception: {e}', exc_info=True)
-    return render_template('error.html',
-                         error_code=500,
-                         error_message="予期しないエラー",
-                         error_description="申し訳ございません。予期しないエラーが発生しました。"), 500
-
 def find_port():
     """利用可能なポートを見つける"""
     for port in range(5006, 5020):
@@ -753,14 +680,10 @@ if __name__ == '__main__':
     print(f"🏛️ Total tourist spots: {len(spots)}")
     print("=" * 50)
     
-    try:
-        # 開発用設定でアプリを起動
-        app.run(
-            host='0.0.0.0',  # すべてのインターフェースでリッスン
-            port=port,
-            debug=True,
-            use_reloader=False  # リローダーを無効化
-        )
-    except Exception as e:
-        print(f"❌ アプリの起動に失敗しました: {e}")
-        print(f"📋 ポート {port} が使用中の可能性があります")
+    # 開発用設定でアプリを起動
+    app.run(
+        host='127.0.0.1',
+        port=port,
+        debug=True,
+        use_reloader=True
+    )

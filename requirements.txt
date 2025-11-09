@@ -1,9 +1,9 @@
 # Streamlit Morocco Tourism Guide - Requirements
-streamlit>=1.28.0
-streamlit-folium>=0.15.0
-folium>=0.14.0
-pandas>=2.0.0
-numpy>=1.24.0
+streamlit>=1.41.0
+streamlit-folium>=0.25.0
+folium>=0.20.0
+pandas>=2.2.0
+numpy>=1.26.0
 openai>=1.54.4
 python-dotenv>=1.2.1
 requests>=2.32.5

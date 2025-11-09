@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}エラー {{ error_code }} - モロッコ観光ガイド{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="text-center">
+                <div class="error-icon mb-4">
+                    <i class="fas fa-exclamation-triangle text-warning" style="font-size: 5rem;"></i>
+                </div>
+                
+                <h1 class="display-1 fw-bold text-primary">{{ error_code }}</h1>
+                <h2 class="mb-4">{{ error_message }}</h2>
+                <p class="lead text-muted mb-4">{{ error_description }}</p>
+                
+                <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center">
+                    <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-home me-2"></i>ホームへ戻る
+                    </a>
+                    <button onclick="history.back()" class="btn btn-outline-primary btn-lg">
+                        <i class="fas fa-arrow-left me-2"></i>前のページに戻る
+                    </button>
+                </div>
+                
+                <div class="mt-5">
+                    <h5 class="text-muted">お困りですか？</h5>
+                    <div class="row mt-3">
+                        <div class="col-sm-4">
+                            <a href="{{ url_for('spots') }}" class="btn btn-outline-secondary w-100 mb-2">
+                                <i class="fas fa-map-marker-alt me-2"></i>観光地一覧
+                            </a>
+                        </div>
+                        <div class="col-sm-4">
+                            <a href="{{ url_for('map_page') }}" class="btn btn-outline-secondary w-100 mb-2">
+                                <i class="fas fa-map me-2"></i>マップ
+                            </a>
+                        </div>
+                        <div class="col-sm-4">
+                            <a href="{{ url_for('ai_chat_page') }}" class="btn btn-outline-secondary w-100 mb-2">
+                                <i class="fas fa-robot me-2"></i>AI観光ガイド
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.error-icon {
+    animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-10px);
+    }
+    60% {
+        transform: translateY(-5px);
+    }
+}
+
+.btn {
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+</style>
+{% endblock %}

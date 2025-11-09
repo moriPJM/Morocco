@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block title %}AI観光ガイド - モロッコ観光ガイド{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="text-center mb-4">
+            <i class="fas fa-robot text-primary me-2"></i>
+            モロッコAI観光ガイド
+        </h2>
+        <p class="text-center lead">OpenAI GPT-4o-miniによる専門的な観光案内</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <!-- AI接続状態 -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-satellite-dish me-2"></i>AI接続状態
+                </h5>
+                <div id="ai-status" class="d-flex align-items-center">
+                    <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+                        <span class="visually-hidden">接続確認中...</span>
+                    </div>
+                    <span>AI接続を確認中...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- チャットインターフェース -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-comments me-2"></i>AI観光ガイドに質問
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- チャット履歴 -->
+                <div id="chat-history" class="mb-3" style="height: 400px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; background-color: #f8f9fa;">
+                    <div class="text-center text-muted">
+                        <i class="fas fa-comment-dots fa-2x mb-2"></i>
+                        <p>AI観光ガイドがあなたの質問をお待ちしています！</p>
+                    </div>
+                </div>
+
+                <!-- 質問入力 -->
+                <div class="input-group mb-3">
+                    <input type="text" id="user-question" class="form-control" placeholder="モロッコについて何でもお聞きください..." onkeypress="if(event.key==='Enter') sendQuestion()">
+                    <button class="btn btn-primary" onclick="sendQuestion()">
+                        <i class="fas fa-paper-plane me-1"></i>送信
+                    </button>
+                </div>
+
+                <!-- おすすめ質問 -->
+                <div class="mt-3">
+                    <h6>おすすめ質問:</h6>
+                    <div id="suggestions" class="d-flex flex-wrap gap-2">
+                        <!-- 動的に読み込まれます -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ページ読み込み時の初期化
+document.addEventListener('DOMContentLoaded', function() {
+    checkAIStatus();
+    loadSuggestions();
+});
+
+// AI接続状態確認
+async function checkAIStatus() {
+    try {
+        const response = await fetch('/api/ai/test');
+        const data = await response.json();
+        
+        const statusDiv = document.getElementById('ai-status');
+        
+        if (data.success) {
+            statusDiv.innerHTML = `
+                <i class="fas fa-check-circle text-success me-2"></i>
+                <span class="text-success">AI接続正常 (${data.model})</span>
+            `;
+        } else {
+            statusDiv.innerHTML = `
+                <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                <span class="text-warning">AI接続エラー: ${data.error}</span>
+            `;
+        }
+    } catch (error) {
+        const statusDiv = document.getElementById('ai-status');
+        statusDiv.innerHTML = `
+            <i class="fas fa-times-circle text-danger me-2"></i>
+            <span class="text-danger">接続失敗: ${error.message}</span>
+        `;
+    }
+}
+
+// おすすめ質問を読み込み
+async function loadSuggestions() {
+    try {
+        const response = await fetch('/api/ai/suggestions');
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            if (data.success && data.suggestions) {
+                displaySuggestions(data.suggestions);
+                return;
+            }
+        }
+    } catch (error) {
+        console.warn('おすすめ質問APIの読み込みに失敗、デフォルトを使用:', error);
+    }
+    
+    // APIが失敗した場合のデフォルト質問
+    const defaultSuggestions = [
+        "マラケシュでおすすめの観光スポットは？",
+        "モロッコ料理で絶対食べるべきものは？",
+        "サハラ砂漠ツアーについて教えて",
+        "3日間でモロッコを回るプランを提案して",
+        "モロッコ旅行の予算はいくら必要？"
+    ];
+    
+    displaySuggestions(defaultSuggestions);
+}
+
+// おすすめ質問を表示
+function displaySuggestions(suggestions) {
+    const suggestionsDiv = document.getElementById('suggestions');
+    suggestionsDiv.innerHTML = '';
+    
+    suggestions.slice(0, 5).forEach(suggestion => {
+        const button = document.createElement('button');
+        button.className = 'btn btn-outline-primary btn-sm';
+        button.textContent = suggestion;
+        button.onclick = () => askSuggestion(suggestion);
+        suggestionsDiv.appendChild(button);
+    });
+}
+
+// 質問送信
+async function sendQuestion() {
+    const questionInput = document.getElementById('user-question');
+    const question = questionInput.value.trim();
+    
+    if (!question) {
+        alert('質問を入力してください。');
+        return;
+    }
+    
+    // ユーザーの質問を表示
+    addMessageToChat('user', question);
+    questionInput.value = '';
+    
+    // AI応答中表示
+    const thinkingId = addMessageToChat('ai', 'AI観光ガイドが回答を準備中...');
+    
+    try {
+        const response = await fetch('/api/ai/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                question: question,
+                context: null
+            })
+        });
+        
+        const data = await response.json();
+        
+        // 思考中メッセージを削除
+        document.getElementById(thinkingId).remove();
+        
+        if (data.success) {
+            addMessageToChat('ai', data.response);
+            
+            // 使用量情報表示（デバッグ用）
+            if (data.usage) {
+                console.log('API使用量:', data.usage);
+            }
+        } else {
+            addMessageToChat('ai', `エラー: ${data.error || data.response}`);
+        }
+        
+    } catch (error) {
+        document.getElementById(thinkingId).remove();
+        addMessageToChat('ai', `接続エラー: ${error.message}`);
+    }
+}
+
+// おすすめ質問をクリック
+function askSuggestion(suggestion) {
+    document.getElementById('user-question').value = suggestion;
+    sendQuestion();
+}
+
+// チャットにメッセージを追加
+function addMessageToChat(sender, message) {
+    const chatHistory = document.getElementById('chat-history');
+    const messageId = 'msg-' + Date.now();
+    
+    // 初回メッセージの場合、welcome messageを削除
+    const welcomeMsg = chatHistory.querySelector('.text-center.text-muted');
+    if (welcomeMsg) {
+        welcomeMsg.remove();
+    }
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.id = messageId;
+    messageDiv.className = `mb-3 ${sender === 'user' ? 'text-end' : 'text-start'}`;
+    
+    const isUser = sender === 'user';
+    const bgClass = isUser ? 'bg-primary text-white' : 'bg-light';
+    const icon = isUser ? 'fas fa-user' : 'fas fa-robot';
+    
+    messageDiv.innerHTML = `
+        <div class="d-inline-block p-3 rounded ${bgClass}" style="max-width: 80%;">
+            <div class="mb-1">
+                <i class="${icon} me-1"></i>
+                <small>${isUser ? 'あなた' : 'AI観光ガイド'}</small>
+            </div>
+            <div>${message.replace(/\n/g, '<br>')}</div>
+        </div>
+    `;
+    
+    chatHistory.appendChild(messageDiv);
+    chatHistory.scrollTop = chatHistory.scrollHeight;
+    
+    return messageId;
+}
+</script>
+
+<style>
+.input-group input:focus {
+    border-color: #e74c3c;
+    box-shadow: 0 0 0 0.2rem rgba(231, 76, 60, 0.25);
+}
+
+.btn-outline-primary:hover {
+    background-color: #e74c3c;
+    border-color: #e74c3c;
+}
+
+#chat-history::-webkit-scrollbar {
+    width: 6px;
+}
+
+#chat-history::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+#chat-history::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+#chat-history::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+</style>
+{% endblock %}

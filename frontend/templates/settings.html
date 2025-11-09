@@ -1,0 +1,763 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <!-- ページヘッダー -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h2 text-primary mb-2">
+                <i class="fas fa-cog me-2"></i>
+                設定
+            </h1>
+            <p class="text-muted">アプリの設定をカスタマイズしましょう</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- 設定メニュー -->
+        <div class="col-lg-3 col-md-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">設定カテゴリー</h6>
+                </div>
+                <div class="list-group list-group-flush">
+                    <button class="list-group-item list-group-item-action active" onclick="showSettingsTab('language')">
+                        <i class="fas fa-language me-2"></i>言語設定
+                    </button>
+                    <button class="list-group-item list-group-item-action" onclick="showSettingsTab('voice')">
+                        <i class="fas fa-volume-up me-2"></i>音声設定
+                    </button>
+                    <button class="list-group-item list-group-item-action" onclick="showSettingsTab('display')">
+                        <i class="fas fa-desktop me-2"></i>表示設定
+                    </button>
+                    <button class="list-group-item list-group-item-action" onclick="showSettingsTab('notifications')">
+                        <i class="fas fa-bell me-2"></i>通知設定
+                    </button>
+                    <button class="list-group-item list-group-item-action" onclick="showSettingsTab('privacy')">
+                        <i class="fas fa-shield-alt me-2"></i>プライバシー
+                    </button>
+                    <button class="list-group-item list-group-item-action" onclick="showSettingsTab('account')">
+                        <i class="fas fa-user me-2"></i>アカウント
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 設定コンテンツ -->
+        <div class="col-lg-9 col-md-8">
+            <!-- 言語設定 -->
+            <div id="language-settings" class="settings-tab">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-language text-primary me-2"></i>
+                            言語設定
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label fw-bold">アプリ言語</label>
+                                <select class="form-select" id="appLanguage" onchange="saveLanguageSettings()">
+                                    <option value="ja" selected>日本語</option>
+                                    <option value="en">English</option>
+                                    <option value="fr">Français</option>
+                                    <option value="ar">العربية</option>
+                                </select>
+                                <div class="form-text">アプリのメニューや説明文の言語</div>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label fw-bold">観光地情報言語</label>
+                                <select class="form-select" id="contentLanguage" onchange="saveLanguageSettings()">
+                                    <option value="ja" selected>日本語</option>
+                                    <option value="en">English</option>
+                                    <option value="fr">Français</option>
+                                    <option value="ar">العربية</option>
+                                </select>
+                                <div class="form-text">観光地の説明や詳細情報の言語</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">AI応答言語</label>
+                            <select class="form-select" id="aiLanguage" onchange="saveLanguageSettings()">
+                                <option value="ja" selected>日本語</option>
+                                <option value="en">English</option>
+                                <option value="fr">Français</option>
+                                <option value="ar">العربية</option>
+                            </select>
+                            <div class="form-text">AIチャットでの応答言語</div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            言語設定を変更すると、アプリが再読み込みされます。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 音声設定 -->
+            <div id="voice-settings" class="settings-tab d-none">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-volume-up text-primary me-2"></i>
+                            音声設定
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label fw-bold">音声読み上げ</label>
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" id="voiceEnabled" onchange="saveVoiceSettings()">
+                                    <label class="form-check-label" for="voiceEnabled">
+                                        音声読み上げを有効にする
+                                    </label>
+                                </div>
+                                <div class="form-text">観光地の説明やAI応答を音声で読み上げます</div>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label fw-bold">音声の種類</label>
+                                <select class="form-select" id="voiceType" onchange="saveVoiceSettings()">
+                                    <option value="female-ja">女性（日本語）</option>
+                                    <option value="male-ja">男性（日本語）</option>
+                                    <option value="female-en">Female (English)</option>
+                                    <option value="male-en">Male (English)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label fw-bold">音声速度</label>
+                                <input type="range" class="form-range" id="voiceSpeed" min="0.5" max="2" step="0.1" value="1" onchange="saveVoiceSettings()">
+                                <div class="d-flex justify-content-between">
+                                    <small class="text-muted">遅い</small>
+                                    <small id="speedValue" class="text-primary fw-bold">1.0x</small>
+                                    <small class="text-muted">速い</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label fw-bold">音量</label>
+                                <input type="range" class="form-range" id="voiceVolume" min="0" max="100" value="70" onchange="saveVoiceSettings()">
+                                <div class="d-flex justify-content-between">
+                                    <small class="text-muted">0%</small>
+                                    <small id="volumeValue" class="text-primary fw-bold">70%</small>
+                                    <small class="text-muted">100%</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <button class="btn btn-outline-primary" onclick="testVoice()">
+                                <i class="fas fa-play me-2"></i>音声テスト
+                            </button>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            音声機能を使用するには、ブラウザでマイクへのアクセス許可が必要な場合があります。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 表示設定 -->
+            <div id="display-settings" class="settings-tab d-none">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-desktop text-primary me-2"></i>
+                            表示設定
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label fw-bold">テーマ</label>
+                                <select class="form-select" id="theme" onchange="saveDisplaySettings()">
+                                    <option value="light" selected>ライト</option>
+                                    <option value="dark">ダーク</option>
+                                    <option value="auto">システム設定に従う</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label fw-bold">フォントサイズ</label>
+                                <select class="form-select" id="fontSize" onchange="saveDisplaySettings()">
+                                    <option value="small">小</option>
+                                    <option value="medium" selected>中</option>
+                                    <option value="large">大</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">マップ設定</label>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="showCurrentLocation" checked onchange="saveDisplaySettings()">
+                                <label class="form-check-label" for="showCurrentLocation">
+                                    現在地を表示
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="animateMarkers" checked onchange="saveDisplaySettings()">
+                                <label class="form-check-label" for="animateMarkers">
+                                    マーカーアニメーション
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">画像品質</label>
+                            <select class="form-select" id="imageQuality" onchange="saveDisplaySettings()">
+                                <option value="low">低（データ節約）</option>
+                                <option value="medium" selected>中</option>
+                                <option value="high">高</option>
+                            </select>
+                            <div class="form-text">画像の読み込み品質を設定します</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 通知設定 -->
+            <div id="notifications-settings" class="settings-tab d-none">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-bell text-primary me-2"></i>
+                            通知設定
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">プッシュ通知</label>
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="pushNotifications" onchange="saveNotificationSettings()">
+                                <label class="form-check-label" for="pushNotifications">
+                                    プッシュ通知を有効にする
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">通知内容</label>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="newSpotsNotification" onchange="saveNotificationSettings()">
+                                <label class="form-check-label" for="newSpotsNotification">
+                                    新しい観光地情報
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="weatherNotification" onchange="saveNotificationSettings()">
+                                <label class="form-check-label" for="weatherNotification">
+                                    天気情報
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="tipsNotification" onchange="saveNotificationSettings()">
+                                <label class="form-check-label" for="tipsNotification">
+                                    観光のヒント
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">通知頻度</label>
+                            <select class="form-select" id="notificationFrequency" onchange="saveNotificationSettings()">
+                                <option value="immediate">即座</option>
+                                <option value="daily" selected>日次</option>
+                                <option value="weekly">週次</option>
+                                <option value="never">なし</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- プライバシー設定 -->
+            <div id="privacy-settings" class="settings-tab d-none">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-shield-alt text-primary me-2"></i>
+                            プライバシー設定
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">位置情報</label>
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="locationSharing" onchange="savePrivacySettings()">
+                                <label class="form-check-label" for="locationSharing">
+                                    位置情報の使用を許可
+                                </label>
+                            </div>
+                            <div class="form-text">現在地表示とおすすめ観光地の提案に使用されます</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">データ利用</label>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="analytics" onchange="savePrivacySettings()">
+                                <label class="form-check-label" for="analytics">
+                                    利用統計データの送信を許可
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="crashReports" onchange="savePrivacySettings()">
+                                <label class="form-check-label" for="crashReports">
+                                    クラッシュレポートの送信を許可
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">履歴</label>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-warning" onclick="clearSearchHistory()">
+                                    <i class="fas fa-trash me-2"></i>検索履歴をクリア
+                                </button>
+                                <button class="btn btn-outline-warning" onclick="clearViewHistory()">
+                                    <i class="fas fa-trash me-2"></i>閲覧履歴をクリア
+                                </button>
+                                <button class="btn btn-outline-danger" onclick="clearAllData()">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>すべてのデータをクリア
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- アカウント設定 -->
+            <div id="account-settings" class="settings-tab d-none">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-user text-primary me-2"></i>
+                            アカウント設定
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label fw-bold">ユーザー名</label>
+                                <input type="text" class="form-control" id="username" placeholder="ユーザー名を入力">
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label fw-bold">メールアドレス</label>
+                                <input type="email" class="form-control" id="email" placeholder="メールアドレスを入力">
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">興味のある観光カテゴリー</label>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="interest-religious">
+                                        <label class="form-check-label" for="interest-religious">
+                                            宗教建築
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="interest-nature">
+                                        <label class="form-check-label" for="interest-nature">
+                                            自然・景観
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="interest-market">
+                                        <label class="form-check-label" for="interest-market">
+                                            広場・市場
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="interest-historical">
+                                        <label class="form-check-label" for="interest-historical">
+                                            歴史建築
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <button class="btn btn-primary" onclick="saveAccountSettings()">
+                                <i class="fas fa-save me-2"></i>アカウント情報を保存
+                            </button>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            現在はローカルアカウント機能です。将来的にはクラウド同期に対応予定です。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 設定保存通知 -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="settingsToast" class="toast" role="alert">
+            <div class="toast-header">
+                <i class="fas fa-check-circle text-success me-2"></i>
+                <strong class="me-auto">設定</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">
+                設定が保存されました。
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 設定データ
+let settings = {
+    language: {
+        app: 'ja',
+        content: 'ja',
+        ai: 'ja'
+    },
+    voice: {
+        enabled: false,
+        type: 'female-ja',
+        speed: 1.0,
+        volume: 70
+    },
+    display: {
+        theme: 'light',
+        fontSize: 'medium',
+        showCurrentLocation: true,
+        animateMarkers: true,
+        imageQuality: 'medium'
+    },
+    notifications: {
+        push: false,
+        newSpots: false,
+        weather: false,
+        tips: false,
+        frequency: 'daily'
+    },
+    privacy: {
+        locationSharing: false,
+        analytics: false,
+        crashReports: false
+    },
+    account: {
+        username: '',
+        email: '',
+        interests: []
+    }
+};
+
+// 初期化
+document.addEventListener('DOMContentLoaded', function() {
+    loadSettings();
+    setupEventListeners();
+});
+
+function loadSettings() {
+    // ローカルストレージから設定を読み込み
+    const savedSettings = localStorage.getItem('moroccoAppSettings');
+    if (savedSettings) {
+        settings = { ...settings, ...JSON.parse(savedSettings) };
+    }
+    
+    // UIに設定を反映
+    applySettingsToUI();
+}
+
+function applySettingsToUI() {
+    // 言語設定
+    document.getElementById('appLanguage').value = settings.language.app;
+    document.getElementById('contentLanguage').value = settings.language.content;
+    document.getElementById('aiLanguage').value = settings.language.ai;
+    
+    // 音声設定
+    document.getElementById('voiceEnabled').checked = settings.voice.enabled;
+    document.getElementById('voiceType').value = settings.voice.type;
+    document.getElementById('voiceSpeed').value = settings.voice.speed;
+    document.getElementById('voiceVolume').value = settings.voice.volume;
+    updateSpeedValue();
+    updateVolumeValue();
+    
+    // 表示設定
+    document.getElementById('theme').value = settings.display.theme;
+    document.getElementById('fontSize').value = settings.display.fontSize;
+    document.getElementById('showCurrentLocation').checked = settings.display.showCurrentLocation;
+    document.getElementById('animateMarkers').checked = settings.display.animateMarkers;
+    document.getElementById('imageQuality').value = settings.display.imageQuality;
+    
+    // 通知設定
+    document.getElementById('pushNotifications').checked = settings.notifications.push;
+    document.getElementById('newSpotsNotification').checked = settings.notifications.newSpots;
+    document.getElementById('weatherNotification').checked = settings.notifications.weather;
+    document.getElementById('tipsNotification').checked = settings.notifications.tips;
+    document.getElementById('notificationFrequency').value = settings.notifications.frequency;
+    
+    // プライバシー設定
+    document.getElementById('locationSharing').checked = settings.privacy.locationSharing;
+    document.getElementById('analytics').checked = settings.privacy.analytics;
+    document.getElementById('crashReports').checked = settings.privacy.crashReports;
+    
+    // アカウント設定
+    document.getElementById('username').value = settings.account.username;
+    document.getElementById('email').value = settings.account.email;
+    
+    // 興味のあるカテゴリー
+    settings.account.interests.forEach(interest => {
+        const checkbox = document.getElementById(`interest-${interest}`);
+        if (checkbox) checkbox.checked = true;
+    });
+}
+
+function setupEventListeners() {
+    // 音声速度スライダー
+    document.getElementById('voiceSpeed').addEventListener('input', updateSpeedValue);
+    document.getElementById('voiceVolume').addEventListener('input', updateVolumeValue);
+}
+
+function showSettingsTab(tabName) {
+    // すべてのタブを非表示
+    document.querySelectorAll('.settings-tab').forEach(tab => {
+        tab.classList.add('d-none');
+    });
+    
+    // 選択されたタブを表示
+    document.getElementById(`${tabName}-settings`).classList.remove('d-none');
+    
+    // メニューのアクティブ状態を更新
+    document.querySelectorAll('.list-group-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    event.target.classList.add('active');
+}
+
+function updateSpeedValue() {
+    const speed = document.getElementById('voiceSpeed').value;
+    document.getElementById('speedValue').textContent = `${speed}x`;
+}
+
+function updateVolumeValue() {
+    const volume = document.getElementById('voiceVolume').value;
+    document.getElementById('volumeValue').textContent = `${volume}%`;
+}
+
+function saveLanguageSettings() {
+    settings.language.app = document.getElementById('appLanguage').value;
+    settings.language.content = document.getElementById('contentLanguage').value;
+    settings.language.ai = document.getElementById('aiLanguage').value;
+    
+    saveSettings();
+    showToast();
+}
+
+function saveVoiceSettings() {
+    settings.voice.enabled = document.getElementById('voiceEnabled').checked;
+    settings.voice.type = document.getElementById('voiceType').value;
+    settings.voice.speed = parseFloat(document.getElementById('voiceSpeed').value);
+    settings.voice.volume = parseInt(document.getElementById('voiceVolume').value);
+    
+    saveSettings();
+    showToast();
+}
+
+function saveDisplaySettings() {
+    settings.display.theme = document.getElementById('theme').value;
+    settings.display.fontSize = document.getElementById('fontSize').value;
+    settings.display.showCurrentLocation = document.getElementById('showCurrentLocation').checked;
+    settings.display.animateMarkers = document.getElementById('animateMarkers').checked;
+    settings.display.imageQuality = document.getElementById('imageQuality').value;
+    
+    saveSettings();
+    showToast();
+    
+    // テーマを即座に適用
+    applyTheme(settings.display.theme);
+}
+
+function saveNotificationSettings() {
+    settings.notifications.push = document.getElementById('pushNotifications').checked;
+    settings.notifications.newSpots = document.getElementById('newSpotsNotification').checked;
+    settings.notifications.weather = document.getElementById('weatherNotification').checked;
+    settings.notifications.tips = document.getElementById('tipsNotification').checked;
+    settings.notifications.frequency = document.getElementById('notificationFrequency').value;
+    
+    saveSettings();
+    showToast();
+}
+
+function savePrivacySettings() {
+    settings.privacy.locationSharing = document.getElementById('locationSharing').checked;
+    settings.privacy.analytics = document.getElementById('analytics').checked;
+    settings.privacy.crashReports = document.getElementById('crashReports').checked;
+    
+    saveSettings();
+    showToast();
+}
+
+function saveAccountSettings() {
+    settings.account.username = document.getElementById('username').value;
+    settings.account.email = document.getElementById('email').value;
+    
+    // 興味のあるカテゴリーを収集
+    settings.account.interests = [];
+    ['religious', 'nature', 'market', 'historical'].forEach(category => {
+        if (document.getElementById(`interest-${category}`).checked) {
+            settings.account.interests.push(category);
+        }
+    });
+    
+    saveSettings();
+    showToast();
+}
+
+function saveSettings() {
+    localStorage.setItem('moroccoAppSettings', JSON.stringify(settings));
+}
+
+function showToast() {
+    const toast = new bootstrap.Toast(document.getElementById('settingsToast'));
+    toast.show();
+}
+
+function applyTheme(theme) {
+    const body = document.body;
+    body.classList.remove('dark-theme', 'light-theme');
+    
+    if (theme === 'dark') {
+        body.classList.add('dark-theme');
+    } else if (theme === 'light') {
+        body.classList.add('light-theme');
+    } else {
+        // auto - システム設定に従う
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            body.classList.add('dark-theme');
+        } else {
+            body.classList.add('light-theme');
+        }
+    }
+}
+
+function testVoice() {
+    if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance('モロッコ観光ガイドアプリの音声テストです。');
+        utterance.rate = settings.voice.speed;
+        utterance.volume = settings.voice.volume / 100;
+        
+        // 音声の種類を設定
+        const voices = speechSynthesis.getVoices();
+        const targetVoice = voices.find(voice => 
+            voice.lang.includes('ja') && 
+            (settings.voice.type.includes('female') ? voice.name.includes('Female') || voice.name.includes('女') : voice.name.includes('Male') || voice.name.includes('男'))
+        );
+        if (targetVoice) {
+            utterance.voice = targetVoice;
+        }
+        
+        speechSynthesis.speak(utterance);
+    } else {
+        alert('このブラウザは音声機能をサポートしていません。');
+    }
+}
+
+function clearSearchHistory() {
+    if (confirm('検索履歴をクリアしますか？')) {
+        localStorage.removeItem('moroccoAppSearchHistory');
+        showToast();
+    }
+}
+
+function clearViewHistory() {
+    if (confirm('閲覧履歴をクリアしますか？')) {
+        localStorage.removeItem('moroccoAppViewHistory');
+        showToast();
+    }
+}
+
+function clearAllData() {
+    if (confirm('すべてのデータをクリアしますか？この操作は取り消せません。')) {
+        localStorage.clear();
+        location.reload();
+    }
+}
+</script>
+
+<style>
+.settings-tab {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.list-group-item {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.list-group-item:hover {
+    background-color: #f8f9fa;
+}
+
+.list-group-item.active {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+}
+
+.card {
+    border-radius: 10px;
+    border: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.form-range::-webkit-slider-thumb {
+    background: var(--bs-primary);
+}
+
+.form-range::-moz-range-thumb {
+    background: var(--bs-primary);
+    border: none;
+}
+
+/* ダークテーマ */
+.dark-theme {
+    background-color: #121212;
+    color: #ffffff;
+}
+
+.dark-theme .card {
+    background-color: #1e1e1e;
+    color: #ffffff;
+}
+
+.dark-theme .form-control,
+.dark-theme .form-select {
+    background-color: #2d2d2d;
+    border-color: #404040;
+    color: #ffffff;
+}
+
+.dark-theme .list-group-item {
+    background-color: #1e1e1e;
+    border-color: #404040;
+    color: #ffffff;
+}
+
+.dark-theme .list-group-item:hover {
+    background-color: #2d2d2d;
+}
+</style>
+{% endblock %}
