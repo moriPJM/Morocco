@@ -258,6 +258,12 @@ def get_background_image_css():
                 padding-top: 0 !important;
             }}
             
+            .home-background {{
+                background: transparent;
+                padding: 0;
+                margin: 0;
+            }}
+            
             .home-content {{
                 background: rgba(255, 255, 255, 0.35);
                 padding: 20px 24px 24px 24px;
@@ -462,39 +468,6 @@ def get_background_image_css():
                 box-shadow: 0 3px 12px rgba(255, 215, 0, 0.4);
                 text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
                 border: 1px solid rgba(255, 255, 255, 0.3);
-            }}
-            
-            /* Streamlit Native Elements Mobile Optimization */
-            .stButton > button {{
-                border-radius: 8px !important;
-                font-weight: 600 !important;
-                transition: all 0.2s ease !important;
-                border: none !important;
-                background: linear-gradient(135deg, var(--majorelle-blue), var(--majorelle-blue-dark)) !important;
-                color: white !important;
-            }}
-            
-            .stButton > button:hover {{
-                transform: translateY(-1px) !important;
-                box-shadow: 0 4px 12px rgba(98, 70, 234, 0.3) !important;
-            }}
-            
-            .stSelectbox > label, .stTextInput > label, .stMultiSelect > label {{
-                font-weight: 600 !important;
-                color: white !important;
-                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7) !important;
-            }}
-            
-            .stSelectbox > div > div, .stTextInput > div > div > input {{
-                background: rgba(255, 255, 255, 0.9) !important;
-                border: 1px solid rgba(255, 255, 255, 0.3) !important;
-                border-radius: 8px !important;
-                backdrop-filter: blur(10px) !important;
-            }}
-            
-            .stSelectbox > div > div:hover, .stTextInput > div > div > input:focus {{
-                border-color: var(--majorelle-blue) !important;
-                box-shadow: 0 0 0 2px rgba(98, 70, 234, 0.2) !important;
             }}
             
             .recommendation-card {{
@@ -1019,212 +992,103 @@ def get_background_image_css():
                     0 6px 16px rgba(0, 0, 0, 0.2) !important;
             }}
             
-            /* Mobile Responsive Design - Enhanced */
+            /* Mobile Responsive Design */
             @media (max-width: 768px) {{
-                /* Container adjustments */
-                .main .block-container {{
-                    padding: 1rem 0.5rem !important;
-                    max-width: 100% !important;
-                }}
-                
-                .home-content {{
-                    margin: 0 !important;
-                    padding: 16px !important;
-                    border-radius: 12px !important;
-                }}
-                
                 .home-header {{
-                    padding: 20px 12px 24px 12px !important;
-                    margin: -12px -12px 20px -12px !important;
-                    text-align: center;
+                    padding: 24px 16px 32px 16px;
+                    margin: -16px -16px 24px -16px;
                 }}
                 
                 .home-header h1 {{
-                    font-size: 1.8rem !important;
-                    margin-bottom: 8px !important;
-                    line-height: 1.3 !important;
+                    font-size: 2rem !important;
+                    margin-bottom: 12px;
+                    line-height: 1.2;
                 }}
                 
                 .home-header p {{
-                    font-size: 0.95rem !important;
-                    line-height: 1.5 !important;
-                    opacity: 0.95;
+                    font-size: 1rem !important;
+                    line-height: 1.5;
                 }}
                 
-                /* Metrics for mobile */
                 .metric-container {{
-                    padding: 10px 6px !important;
-                    margin: 6px 2px !important;
-                    min-height: 80px !important;
+                    padding: 12px 8px !important;
+                    margin: 8px 4px !important;
                 }}
                 
                 .metric-container > div:first-child {{
-                    font-size: 1.8rem !important;
-                    margin-bottom: 2px !important;
+                    font-size: 2rem !important;
+                    margin-bottom: 4px;
                 }}
                 
                 .metric-container > div:nth-child(2) {{
-                    font-size: 1.3rem !important;
-                    margin-bottom: 2px !important;
+                    font-size: 1.5rem !important;
                 }}
                 
                 .metric-container > div:last-child {{
-                    font-size: 0.8rem !important;
-                    line-height: 1.2 !important;
+                    font-size: 0.9rem !important;
                 }}
                 
-                /* Cards for mobile */
                 .recommendation-card {{
-                    margin: 10px 0 !important;
-                    padding: 14px !important;
-                    height: auto !important;
-                    min-height: 300px;
-                }}
-                
-                .card-thumbnail {{
-                    height: 100px !important;
-                    margin-bottom: 8px;
+                    margin: 8px 0 !important;
+                    padding: 16px !important;
                 }}
                 
                 .card-title {{
                     font-size: 1.1rem !important;
-                    margin-bottom: 6px !important;
-                    line-height: 1.3 !important;
-                }}
-                
-                .card-location {{
-                    font-size: 0.85rem !important;
-                    margin-bottom: 8px !important;
+                    margin-bottom: 8px;
                 }}
                 
                 .card-description {{
                     font-size: 0.9rem !important;
-                    line-height: 1.4 !important;
-                    margin-bottom: 10px !important;
+                    line-height: 1.4;
                 }}
                 
-                /* Info sections */
                 .info-section {{
-                    margin: 14px 0 !important;
-                    padding: 0 4px !important;
+                    margin: 16px 0 !important;
                 }}
                 
                 .info-section h3 {{
-                    font-size: 1.25rem !important;
-                    margin-bottom: 10px !important;
-                    text-align: center;
+                    font-size: 1.3rem !important;
+                    margin-bottom: 12px;
                 }}
                 
                 .info-card {{
                     padding: 12px !important;
-                    margin: 8px 0 !important;
                 }}
                 
                 .info-card h4 {{
                     font-size: 1rem !important;
-                    margin-bottom: 6px !important;
+                    margin-bottom: 8px;
                 }}
                 
                 .info-card li {{
                     font-size: 0.9rem !important;
-                    line-height: 1.4 !important;
-                    margin-bottom: 3px !important;
-                }}
-                
-                /* Form inputs for mobile */
-                .stSelectbox > div > div {{
-                    font-size: 0.9rem !important;
-                }}
-                
-                .stButton > button {{
-                    width: 100% !important;
-                    padding: 12px !important;
-                    font-size: 1rem !important;
-                }}
-                
-                /* Spot cards */
-                .spot-card {{
-                    padding: 16px !important;
-                    margin: 12px 0 !important;
-                }}
-                
-                .spot-title {{
-                    font-size: 1.2rem !important;
-                    margin-bottom: 6px !important;
-                }}
-                
-                .spot-meta {{
-                    font-size: 0.9rem !important;
-                    margin-bottom: 12px !important;
-                }}
-                
-                .category-badge, .verified-badge {{
-                    padding: 6px 10px !important;
-                    font-size: 0.75rem !important;
-                    margin: 2px !important;
+                    line-height: 1.4;
+                    margin-bottom: 4px;
                 }}
             }}
             
             @media (max-width: 480px) {{
-                /* Extra small mobile devices */
-                .main .block-container {{
-                    padding: 0.5rem 0.25rem !important;
-                }}
-                
-                .home-content {{
-                    padding: 12px !important;
-                    margin: 0 !important;
-                }}
-                
-                .home-header {{
-                    padding: 16px 8px 20px 8px !important;
-                    margin: -8px -8px 16px -8px !important;
-                }}
-                
                 .home-header h1 {{
-                    font-size: 1.6rem !important;
-                    letter-spacing: 0.2px !important;
-                    line-height: 1.25 !important;
+                    font-size: 1.7rem !important;
+                    letter-spacing: 0.3px;
                 }}
                 
                 .home-header p {{
-                    font-size: 0.9rem !important;
-                    line-height: 1.4 !important;
+                    font-size: 0.95rem !important;
                 }}
                 
-                /* Compact metrics */
                 .metric-container {{
-                    padding: 8px 4px !important;
-                    margin: 4px 1px !important;
-                    min-height: 70px !important;
+                    padding: 10px 6px !important;
+                    margin: 6px 2px !important;
                 }}
                 
-                .metric-container > div:first-child {{
-                    font-size: 1.6rem !important;
-                }}
-                
-                .metric-container > div:nth-child(2) {{
-                    font-size: 1.1rem !important;
-                }}
-                
-                .metric-container > div:last-child {{
-                    font-size: 0.75rem !important;
-                }}
-                
-                /* Compact cards */
                 .recommendation-card {{
-                    padding: 10px !important;
-                    margin: 8px 0 !important;
-                    min-height: 280px !important;
-                }}
-                
-                .card-thumbnail {{
-                    height: 80px !important;
+                    padding: 12px !important;
                 }}
                 
                 .card-title {{
                     font-size: 1rem !important;
-                    line-height: 1.25 !important;
                 }}
                 
                 .card-location {{
@@ -1233,128 +1097,6 @@ def get_background_image_css():
                 
                 .card-description {{
                     font-size: 0.85rem !important;
-                    line-height: 1.3 !important;
-                }}
-                
-                /* Compact info sections */
-                .info-section h3 {{
-                    font-size: 1.15rem !important;
-                }}
-                
-                .info-card {{
-                    padding: 10px !important;
-                }}
-                
-                .info-card h4 {{
-                    font-size: 0.95rem !important;
-                }}
-                
-                .info-card li {{
-                    font-size: 0.85rem !important;
-                }}
-                
-                /* Spot cards compact */
-                .spot-card {{
-                    padding: 12px !important;
-                    margin: 10px 0 !important;
-                }}
-                
-                .spot-title {{
-                    font-size: 1.1rem !important;
-                }}
-                
-                .spot-meta {{
-                    font-size: 0.85rem !important;
-                }}
-                
-                .category-badge, .verified-badge {{
-                    padding: 4px 8px !important;
-                    font-size: 0.7rem !important;
-                }}
-                
-                /* Touch-friendly buttons */
-                .stButton > button {{
-                    padding: 14px !important;
-                    font-size: 0.95rem !important;
-                    min-height: 48px !important;
-                }}
-                
-                /* Better text readability */
-                .card-title, .spot-title {{
-                    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9) !important;
-                }}
-                
-                .card-description, .spot-meta {{
-                    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8) !important;
-                }}
-            }}
-            
-            /* Tablet Responsive Design */
-            @media (min-width: 769px) and (max-width: 1024px) {{
-                .home-content {{
-                    padding: 20px !important;
-                    margin: 0 auto !important;
-                    max-width: 95% !important;
-                }}
-                
-                .home-header {{
-                    padding: 28px 20px 36px 20px !important;
-                    text-align: center;
-                }}
-                
-                .home-header h1 {{
-                    font-size: 2.2rem !important;
-                    margin-bottom: 12px !important;
-                }}
-                
-                .home-header p {{
-                    font-size: 1.1rem !important;
-                    max-width: 600px !important;
-                    margin: 0 auto !important;
-                }}
-                
-                .recommendation-card {{
-                    margin: 12px 0 !important;
-                    padding: 18px !important;
-                    height: 360px !important;
-                }}
-                
-                .card-title {{
-                    font-size: 1.2rem !important;
-                }}
-                
-                .card-description {{
-                    font-size: 0.95rem !important;
-                    line-height: 1.5 !important;
-                }}
-                
-                .spot-card {{
-                    padding: 20px !important;
-                    margin: 16px 0 !important;
-                }}
-                
-                .spot-title {{
-                    font-size: 1.3rem !important;
-                }}
-                
-                .metric-container {{
-                    padding: 14px 10px !important;
-                    margin: 10px 6px !important;
-                }}
-            }}
-            
-            /* Large Mobile Landscape */
-            @media (min-width: 481px) and (max-width: 768px) and (orientation: landscape) {{
-                .home-header h1 {{
-                    font-size: 1.9rem !important;
-                }}
-                
-                .recommendation-card {{
-                    height: 320px !important;
-                }}
-                
-                .metric-container {{
-                    min-height: 75px !important;
                 }}
             }}
         </style>
@@ -1413,6 +1155,14 @@ def get_background_image_css():
                 0% { background-position: 0% 50%; }
                 50% { background-position: 100% 50%; }
                 100% { background-position: 0% 50%; }
+            }
+            
+            .home-background {
+                background: transparent;
+                padding: 0;
+                margin: 0;
+                position: relative;
+                z-index: 2;
             }
             
             .home-content {
@@ -3513,7 +3263,8 @@ def show_home_page(spots):
     # 背景画像のCSSを適用
     st.markdown(get_background_image_css(), unsafe_allow_html=True)
     
-    # コンテナの開始
+    # 背景画像コンテナの開始
+    st.markdown('<div class="home-background">', unsafe_allow_html=True)
     st.markdown('<div class="home-content">', unsafe_allow_html=True)
     
     # ヘッダーセクション
@@ -3714,8 +3465,9 @@ def show_home_page(spots):
         </div>
         """, unsafe_allow_html=True)
     
-    # コンテナの終了
+    # 背景画像コンテナの終了
     st.markdown('</div>', unsafe_allow_html=True)  # home-content
+    st.markdown('</div>', unsafe_allow_html=True)  # home-background
 
 def show_map_page(spots):
     """マップページ"""
@@ -4739,8 +4491,9 @@ def show_spots_page(spots):
             
             st.markdown("---")  # 区切り線を追加
     
-    # コンテナの終了
+    # 背景画像コンテナの終了
     st.markdown('</div>', unsafe_allow_html=True)  # home-content 終了
+    st.markdown('</div>', unsafe_allow_html=True)  # home-background 終了
 
 def show_route_page(spots):
     """観光ルート作成ページ"""
