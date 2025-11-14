@@ -168,25 +168,21 @@ def get_background_image_css():
             }}
             
             .stApp {{
-                background-image: 
+                background: 
                     linear-gradient(to bottom, 
-                        rgba(255, 255, 255, 0.3) 0%,
+                        rgba(255, 255, 255, 0.2) 0%,
                         rgba(255, 255, 255, 0.1) 15%,
-                        rgba(98, 70, 234, 0.2) 30%,
-                        rgba(77, 52, 199, 0.3) 50%,
-                        rgba(45, 27, 105, 0.5) 80%,
-                        rgba(0, 0, 0, 0.4) 100%
+                        rgba(98, 70, 234, 0.15) 30%,
+                        rgba(77, 52, 199, 0.25) 50%,
+                        rgba(45, 27, 105, 0.4) 80%,
+                        rgba(0, 0, 0, 0.3) 100%
                     ), 
-                    linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3)),
                     url(data:image/jpeg;base64,{img_data});
-                background-size: 110% auto;
-                background-position: center top;
+                background-size: cover;
+                background-position: center center;
                 background-attachment: fixed;
+                background-repeat: no-repeat;
                 min-height: 100vh;
-                background-color: linear-gradient(135deg, 
-                    var(--majorelle-blue-light) 0%, 
-                    var(--gold-light) 100%);
-                animation: subtleParallax 20s ease-in-out infinite;
                 position: relative;
             }}
             
@@ -207,21 +203,10 @@ def get_background_image_css():
                 z-index: 1;
             }}
             
-            @keyframes subtleParallax {{
-                0%, 100% {{ 
-                    background-position: center top;
-                    background-size: 110% auto;
-                }}
-                50% {{ 
-                    background-position: center bottom;
-                    background-size: 115% auto;
-                }}
-            }}
-            
-            /* Streamlit container adjustments for removing top spacing */
+            /* Streamlit container adjustments for clean layout */
             .main .block-container {{
-                padding-top: 0 !important;
-                margin-top: -50px !important;
+                padding-top: 1rem !important;
+                margin-top: 0 !important;
                 max-width: 1200px;
                 padding-bottom: 0 !important;
             }}
@@ -278,7 +263,7 @@ def get_background_image_css():
                 background: transparent;
                 min-height: 100vh;
                 padding: 0;
-                margin: -20px -16px -16px -16px;
+                margin: 0;
             }}
             
             .home-content {{
@@ -292,7 +277,7 @@ def get_background_image_css():
                     inset 0 2px 0 rgba(255, 255, 255, 0.7),
                     inset 0 -2px 0 rgba(0, 0, 0, 0.1);
                 border: 1px solid rgba(255, 255, 255, 0.5);
-                margin-top: 0;
+                margin: 0;
                 position: relative;
                 z-index: 2;
             }}
@@ -485,6 +470,39 @@ def get_background_image_css():
                 box-shadow: 0 3px 12px rgba(255, 215, 0, 0.4);
                 text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
                 border: 1px solid rgba(255, 255, 255, 0.3);
+            }}
+            
+            /* Streamlit Native Elements Mobile Optimization */
+            .stButton > button {{
+                border-radius: 8px !important;
+                font-weight: 600 !important;
+                transition: all 0.2s ease !important;
+                border: none !important;
+                background: linear-gradient(135deg, var(--majorelle-blue), var(--majorelle-blue-dark)) !important;
+                color: white !important;
+            }}
+            
+            .stButton > button:hover {{
+                transform: translateY(-1px) !important;
+                box-shadow: 0 4px 12px rgba(98, 70, 234, 0.3) !important;
+            }}
+            
+            .stSelectbox > label, .stTextInput > label, .stMultiSelect > label {{
+                font-weight: 600 !important;
+                color: white !important;
+                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7) !important;
+            }}
+            
+            .stSelectbox > div > div, .stTextInput > div > div > input {{
+                background: rgba(255, 255, 255, 0.9) !important;
+                border: 1px solid rgba(255, 255, 255, 0.3) !important;
+                border-radius: 8px !important;
+                backdrop-filter: blur(10px) !important;
+            }}
+            
+            .stSelectbox > div > div:hover, .stTextInput > div > div > input:focus {{
+                border-color: var(--majorelle-blue) !important;
+                box-shadow: 0 0 0 2px rgba(98, 70, 234, 0.2) !important;
             }}
             
             .recommendation-card {{
@@ -1009,103 +1027,212 @@ def get_background_image_css():
                     0 6px 16px rgba(0, 0, 0, 0.2) !important;
             }}
             
-            /* Mobile Responsive Design */
+            /* Mobile Responsive Design - Enhanced */
             @media (max-width: 768px) {{
-                .home-header {{
-                    padding: 24px 16px 32px 16px;
-                    margin: -16px -16px 24px -16px;
+                /* Container adjustments */
+                .main .block-container {{
+                    padding: 1rem 0.5rem !important;
+                    max-width: 100% !important;
                 }}
                 
-                .home-header h1 {{
-                    font-size: 2rem !important;
-                    margin-bottom: 12px;
-                    line-height: 1.2;
-                }}
-                
-                .home-header p {{
-                    font-size: 1rem !important;
-                    line-height: 1.5;
-                }}
-                
-                .metric-container {{
-                    padding: 12px 8px !important;
-                    margin: 8px 4px !important;
-                }}
-                
-                .metric-container > div:first-child {{
-                    font-size: 2rem !important;
-                    margin-bottom: 4px;
-                }}
-                
-                .metric-container > div:nth-child(2) {{
-                    font-size: 1.5rem !important;
-                }}
-                
-                .metric-container > div:last-child {{
-                    font-size: 0.9rem !important;
-                }}
-                
-                .recommendation-card {{
-                    margin: 8px 0 !important;
+                .home-content {{
+                    margin: 0 !important;
                     padding: 16px !important;
+                    border-radius: 12px !important;
                 }}
                 
-                .card-title {{
-                    font-size: 1.1rem !important;
-                    margin-bottom: 8px;
+                .home-header {{
+                    padding: 20px 12px 24px 12px !important;
+                    margin: -12px -12px 20px -12px !important;
+                    text-align: center;
                 }}
                 
-                .card-description {{
-                    font-size: 0.9rem !important;
-                    line-height: 1.4;
-                }}
-                
-                .info-section {{
-                    margin: 16px 0 !important;
-                }}
-                
-                .info-section h3 {{
-                    font-size: 1.3rem !important;
-                    margin-bottom: 12px;
-                }}
-                
-                .info-card {{
-                    padding: 12px !important;
-                }}
-                
-                .info-card h4 {{
-                    font-size: 1rem !important;
-                    margin-bottom: 8px;
-                }}
-                
-                .info-card li {{
-                    font-size: 0.9rem !important;
-                    line-height: 1.4;
-                    margin-bottom: 4px;
-                }}
-            }}
-            
-            @media (max-width: 480px) {{
                 .home-header h1 {{
-                    font-size: 1.7rem !important;
-                    letter-spacing: 0.3px;
+                    font-size: 1.8rem !important;
+                    margin-bottom: 8px !important;
+                    line-height: 1.3 !important;
                 }}
                 
                 .home-header p {{
                     font-size: 0.95rem !important;
+                    line-height: 1.5 !important;
+                    opacity: 0.95;
                 }}
                 
+                /* Metrics for mobile */
                 .metric-container {{
                     padding: 10px 6px !important;
                     margin: 6px 2px !important;
+                    min-height: 80px !important;
                 }}
                 
+                .metric-container > div:first-child {{
+                    font-size: 1.8rem !important;
+                    margin-bottom: 2px !important;
+                }}
+                
+                .metric-container > div:nth-child(2) {{
+                    font-size: 1.3rem !important;
+                    margin-bottom: 2px !important;
+                }}
+                
+                .metric-container > div:last-child {{
+                    font-size: 0.8rem !important;
+                    line-height: 1.2 !important;
+                }}
+                
+                /* Cards for mobile */
                 .recommendation-card {{
+                    margin: 10px 0 !important;
+                    padding: 14px !important;
+                    height: auto !important;
+                    min-height: 300px;
+                }}
+                
+                .card-thumbnail {{
+                    height: 100px !important;
+                    margin-bottom: 8px;
+                }}
+                
+                .card-title {{
+                    font-size: 1.1rem !important;
+                    margin-bottom: 6px !important;
+                    line-height: 1.3 !important;
+                }}
+                
+                .card-location {{
+                    font-size: 0.85rem !important;
+                    margin-bottom: 8px !important;
+                }}
+                
+                .card-description {{
+                    font-size: 0.9rem !important;
+                    line-height: 1.4 !important;
+                    margin-bottom: 10px !important;
+                }}
+                
+                /* Info sections */
+                .info-section {{
+                    margin: 14px 0 !important;
+                    padding: 0 4px !important;
+                }}
+                
+                .info-section h3 {{
+                    font-size: 1.25rem !important;
+                    margin-bottom: 10px !important;
+                    text-align: center;
+                }}
+                
+                .info-card {{
                     padding: 12px !important;
+                    margin: 8px 0 !important;
+                }}
+                
+                .info-card h4 {{
+                    font-size: 1rem !important;
+                    margin-bottom: 6px !important;
+                }}
+                
+                .info-card li {{
+                    font-size: 0.9rem !important;
+                    line-height: 1.4 !important;
+                    margin-bottom: 3px !important;
+                }}
+                
+                /* Form inputs for mobile */
+                .stSelectbox > div > div {{
+                    font-size: 0.9rem !important;
+                }}
+                
+                .stButton > button {{
+                    width: 100% !important;
+                    padding: 12px !important;
+                    font-size: 1rem !important;
+                }}
+                
+                /* Spot cards */
+                .spot-card {{
+                    padding: 16px !important;
+                    margin: 12px 0 !important;
+                }}
+                
+                .spot-title {{
+                    font-size: 1.2rem !important;
+                    margin-bottom: 6px !important;
+                }}
+                
+                .spot-meta {{
+                    font-size: 0.9rem !important;
+                    margin-bottom: 12px !important;
+                }}
+                
+                .category-badge, .verified-badge {{
+                    padding: 6px 10px !important;
+                    font-size: 0.75rem !important;
+                    margin: 2px !important;
+                }}
+            }}
+            
+            @media (max-width: 480px) {{
+                /* Extra small mobile devices */
+                .main .block-container {{
+                    padding: 0.5rem 0.25rem !important;
+                }}
+                
+                .home-content {{
+                    padding: 12px !important;
+                    margin: 0 !important;
+                }}
+                
+                .home-header {{
+                    padding: 16px 8px 20px 8px !important;
+                    margin: -8px -8px 16px -8px !important;
+                }}
+                
+                .home-header h1 {{
+                    font-size: 1.6rem !important;
+                    letter-spacing: 0.2px !important;
+                    line-height: 1.25 !important;
+                }}
+                
+                .home-header p {{
+                    font-size: 0.9rem !important;
+                    line-height: 1.4 !important;
+                }}
+                
+                /* Compact metrics */
+                .metric-container {{
+                    padding: 8px 4px !important;
+                    margin: 4px 1px !important;
+                    min-height: 70px !important;
+                }}
+                
+                .metric-container > div:first-child {{
+                    font-size: 1.6rem !important;
+                }}
+                
+                .metric-container > div:nth-child(2) {{
+                    font-size: 1.1rem !important;
+                }}
+                
+                .metric-container > div:last-child {{
+                    font-size: 0.75rem !important;
+                }}
+                
+                /* Compact cards */
+                .recommendation-card {{
+                    padding: 10px !important;
+                    margin: 8px 0 !important;
+                    min-height: 280px !important;
+                }}
+                
+                .card-thumbnail {{
+                    height: 80px !important;
                 }}
                 
                 .card-title {{
                     font-size: 1rem !important;
+                    line-height: 1.25 !important;
                 }}
                 
                 .card-location {{
@@ -1114,6 +1241,128 @@ def get_background_image_css():
                 
                 .card-description {{
                     font-size: 0.85rem !important;
+                    line-height: 1.3 !important;
+                }}
+                
+                /* Compact info sections */
+                .info-section h3 {{
+                    font-size: 1.15rem !important;
+                }}
+                
+                .info-card {{
+                    padding: 10px !important;
+                }}
+                
+                .info-card h4 {{
+                    font-size: 0.95rem !important;
+                }}
+                
+                .info-card li {{
+                    font-size: 0.85rem !important;
+                }}
+                
+                /* Spot cards compact */
+                .spot-card {{
+                    padding: 12px !important;
+                    margin: 10px 0 !important;
+                }}
+                
+                .spot-title {{
+                    font-size: 1.1rem !important;
+                }}
+                
+                .spot-meta {{
+                    font-size: 0.85rem !important;
+                }}
+                
+                .category-badge, .verified-badge {{
+                    padding: 4px 8px !important;
+                    font-size: 0.7rem !important;
+                }}
+                
+                /* Touch-friendly buttons */
+                .stButton > button {{
+                    padding: 14px !important;
+                    font-size: 0.95rem !important;
+                    min-height: 48px !important;
+                }}
+                
+                /* Better text readability */
+                .card-title, .spot-title {{
+                    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9) !important;
+                }}
+                
+                .card-description, .spot-meta {{
+                    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8) !important;
+                }}
+            }}
+            
+            /* Tablet Responsive Design */
+            @media (min-width: 769px) and (max-width: 1024px) {{
+                .home-content {{
+                    padding: 20px !important;
+                    margin: 0 auto !important;
+                    max-width: 95% !important;
+                }}
+                
+                .home-header {{
+                    padding: 28px 20px 36px 20px !important;
+                    text-align: center;
+                }}
+                
+                .home-header h1 {{
+                    font-size: 2.2rem !important;
+                    margin-bottom: 12px !important;
+                }}
+                
+                .home-header p {{
+                    font-size: 1.1rem !important;
+                    max-width: 600px !important;
+                    margin: 0 auto !important;
+                }}
+                
+                .recommendation-card {{
+                    margin: 12px 0 !important;
+                    padding: 18px !important;
+                    height: 360px !important;
+                }}
+                
+                .card-title {{
+                    font-size: 1.2rem !important;
+                }}
+                
+                .card-description {{
+                    font-size: 0.95rem !important;
+                    line-height: 1.5 !important;
+                }}
+                
+                .spot-card {{
+                    padding: 20px !important;
+                    margin: 16px 0 !important;
+                }}
+                
+                .spot-title {{
+                    font-size: 1.3rem !important;
+                }}
+                
+                .metric-container {{
+                    padding: 14px 10px !important;
+                    margin: 10px 6px !important;
+                }}
+            }}
+            
+            /* Large Mobile Landscape */
+            @media (min-width: 481px) and (max-width: 768px) and (orientation: landscape) {{
+                .home-header h1 {{
+                    font-size: 1.9rem !important;
+                }}
+                
+                .recommendation-card {{
+                    height: 320px !important;
+                }}
+                
+                .metric-container {{
+                    min-height: 75px !important;
                 }}
             }}
         </style>
@@ -1178,8 +1427,8 @@ def get_background_image_css():
             .home-background {
                 background: transparent;
                 min-height: 100vh;
-                padding: 8px;
-                margin: -8px -16px -16px -16px;
+                padding: 0;
+                margin: 0;
                 position: relative;
                 z-index: 2;
             }
@@ -1194,7 +1443,7 @@ def get_background_image_css():
                     0 2px 16px rgba(0, 0, 0, 0.08),
                     inset 0 1px 0 rgba(255, 255, 255, 0.4);
                 border: 1px solid rgba(255, 255, 255, 0.3);
-                margin-top: 0;
+                margin: 0;
             }
         </style>
         """
@@ -3337,8 +3586,13 @@ def show_home_page(spots):
     
     # クイックアクションセクション
     st.markdown("""
-    <div style="margin: 32px 0;">
-        <h2 style="text-align: center; color: var(--text-primary); margin-bottom: 24px; font-size: 2.4rem; font-weight: 600; line-height: 1.3;">🚀 今すぐ始める</h2>
+    <div style="margin: 32px 0; text-align: center; background: var(--white-glass); padding: 24px; border-radius: 15px; backdrop-filter: blur(12px);">
+        <h2 style="color: white; margin-bottom: 12px; font-size: 2.2rem; font-weight: 600; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">
+            🚀 今すぐ始める
+        </h2>
+        <p style="color: rgba(255,255,255,0.9); font-size: 1rem; margin: 0; text-shadow: 0 1px 3px rgba(0,0,0,0.6);">
+            お好みの方法でモロッコ観光を開始しましょう
+        </p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -3368,13 +3622,26 @@ def show_home_page(spots):
     
     # おすすめ観光地
     st.markdown("""
-    <div style="margin: 32px 0;">
-        <h2 style="text-align: center; color: var(--text-primary); margin-bottom: 24px; font-size: 2.4rem; font-weight: 600; line-height: 1.3;">🌟 おすすめ観光地</h2>
-        <p style="text-align: center; color: var(--text-secondary); margin-bottom: 32px; line-height: 1.6;">モロッコの魅力的な観光スポットをご紹介</p>
+    <div style="margin: 40px 0; text-align: center; background: var(--white-glass); padding: 32px; border-radius: 20px; backdrop-filter: blur(16px);">
+        <h2 style="color: white; margin-bottom: 16px; font-size: 2.8rem; font-weight: 700; text-shadow: 0 3px 6px rgba(0,0,0,0.8); letter-spacing: 0.5px;">
+            ✨ おすすめ観光地 ✨
+        </h2>
+        <p style="color: white; font-size: 1.2rem; margin-bottom: 8px; line-height: 1.8; text-shadow: 0 2px 4px rgba(0,0,0,0.7); font-weight: 500;">
+            🕌 モロッコの魅力あふれる観光スポット 🕌
+        </p>
+        <p style="color: rgba(255,255,255,0.9); font-size: 1rem; margin: 0; line-height: 1.6; text-shadow: 0 1px 3px rgba(0,0,0,0.6);">
+            厳選された認定スポットから、あなたの旅を特別なものにする場所をご案内します
+        </p>
+        <div style="width: 80px; height: 3px; background: linear-gradient(90deg, var(--gold), var(--majorelle-blue)); margin: 20px auto 0; border-radius: 2px;"></div>
     </div>
     """, unsafe_allow_html=True)
     
     recommended_spots = [spot for spot in spots if spot.get('verified', False)][:6]
+    
+    # 認定済み観光地がない場合は、人気の観光地を表示
+    if not recommended_spots:
+        st.info("📍 すべての観光地から人気スポットをご紹介します")
+        recommended_spots = spots[:6]  # 最初の6つを表示
     
     # 3列のグリッドレイアウト
     for i in range(0, len(recommended_spots), 3):
@@ -3431,7 +3698,9 @@ def show_home_page(spots):
     with col1:
         st.markdown("""
         <div class="info-section">
-            <h3>📚 モロッコ豆知識</h3>
+            <h3 style="color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.8); font-size: 1.4rem; margin-bottom: 16px; text-align: center;">
+                📚 モロッコ豆知識 📚
+            </h3>
             <div class="info-card">
                 <h4>🌍 基本情報</h4>
                 <ul>
@@ -3448,7 +3717,9 @@ def show_home_page(spots):
     with col2:
         st.markdown("""
         <div class="info-section">
-            <h3>🎭 文化・伝統</h3>
+            <h3 style="color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.8); font-size: 1.4rem; margin-bottom: 16px; text-align: center;">
+                🎭 文化・伝統 🎭
+            </h3>
             <div class="info-card">
                 <h4>✨ 特徴</h4>
                 <ul>
@@ -4457,7 +4728,16 @@ def show_spots_page(spots):
             st.rerun()
         
         # おすすめ観光地を表示
-        st.markdown("### 🌟 おすすめ観光地")
+        st.markdown("""
+        <div style="margin: 24px 0; padding: 20px; background: linear-gradient(135deg, var(--majorelle-blue-light), var(--gold-light)); border-radius: 15px; border-left: 5px solid var(--majorelle-blue);">
+            <h3 style="color: var(--majorelle-blue); margin: 0; font-size: 1.5rem; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+                ✨ おすすめ観光地 ✨
+            </h3>
+            <p style="color: var(--text-primary); margin: 8px 0 0; font-size: 0.95rem; line-height: 1.5;">
+                検索条件に該当する観光地が見つからない場合は、以下の厳選スポットをご覧ください
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
         recommended = [spot for spot in spots if spot.get('verified', False)][:4]
         
         for i, spot in enumerate(recommended):
@@ -4579,12 +4859,18 @@ def show_route_page(spots):
             
             with col_check:
                 is_selected = spot in st.session_state.selected_route_spots
-                if st.checkbox("", value=is_selected, key=f"route_spot_{spot['id']}"):
-                    if spot not in st.session_state.selected_route_spots:
-                        st.session_state.selected_route_spots.append(spot)
-                else:
-                    if spot in st.session_state.selected_route_spots:
-                        st.session_state.selected_route_spots.remove(spot)
+                selected = st.checkbox(
+                    "選択", 
+                    value=is_selected, 
+                    key=f"route_spot_{spot['id']}", 
+                    label_visibility="collapsed"
+                )
+                
+                # 選択状態の更新
+                if selected and spot not in st.session_state.selected_route_spots:
+                    st.session_state.selected_route_spots.append(spot)
+                elif not selected and spot in st.session_state.selected_route_spots:
+                    st.session_state.selected_route_spots.remove(spot)
             
             with col_info:
                 verified_badge = "✅" if spot.get('verified') else ""
@@ -4611,16 +4897,35 @@ def show_route_page(spots):
         # ルート生成ボタン
         col1, col2, col3 = st.columns([1, 1, 1])
         with col2:
-            if st.button("🗺️ ルートを生成", type="primary", use_container_width=True):
-                st.session_state.generated_route = generate_optimal_route(
-                    st.session_state.selected_route_spots,
-                    travel_days,
-                    travel_style,
-                    transport_mode,
-                    budget_level
-                )
-                st.success("✅ 観光ルートが生成されました！")
-                st.rerun()
+            # 選択された観光地数のチェック
+            num_selected = len(st.session_state.selected_route_spots)
+            min_spots = travel_days
+            max_spots = travel_days * 4
+            
+            if num_selected < min_spots:
+                st.warning(f"⚠️ 最低{min_spots}箇所の観光地を選択してください（現在:{num_selected}箇所）")
+                button_disabled = True
+            elif num_selected > max_spots:
+                st.warning(f"⚠️ 観光地数が多すぎます。{max_spots}箇所以下にしてください（現在:{num_selected}箇所）")
+                button_disabled = True
+            else:
+                button_disabled = False
+            
+            if st.button("🗺️ ルートを生成", type="primary", use_container_width=True, disabled=button_disabled):
+                try:
+                    with st.spinner("最適なルートを生成中..."):
+                        st.session_state.generated_route = generate_optimal_route(
+                            st.session_state.selected_route_spots,
+                            travel_days,
+                            travel_style,
+                            transport_mode,
+                            budget_level
+                        )
+                    st.success("✅ 観光ルートが生成されました！")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"❌ ルート生成でエラーが発生しました: {str(e)}")
+                    logger.error(f"Route generation error: {e}")
     else:
         st.info("観光地を選択してください。")
     
@@ -4684,6 +4989,8 @@ def show_route_page(spots):
             if st.button("🔄 ルートをリセット", use_container_width=True):
                 st.session_state.selected_route_spots = []
                 st.session_state.generated_route = None
+                st.success("ルートがリセットされました")
+                st.rerun()
                 st.rerun()
 
 def generate_optimal_route(selected_spots, travel_days, travel_style, transport_mode, budget_level):
@@ -4692,7 +4999,7 @@ def generate_optimal_route(selected_spots, travel_days, travel_style, transport_
     from datetime import datetime, timedelta
     
     # 基本設定
-    spots_per_day = max(1, len(selected_spots) // travel_days)
+    spots_per_day = max(1, min(4, len(selected_spots) // travel_days))  # 1日最大4箇所に制限
     
     # 予算設定
     budget_multiplier = {
@@ -4744,6 +5051,11 @@ def generate_optimal_route(selected_spots, travel_days, travel_style, transport_
         # 観光スポット
         for i, spot in enumerate(day_spots):
             current_time = f"{9 + i * 3}:00"
+            # 座標データを正しく取得
+            coordinates = None
+            if 'lat' in spot and 'lng' in spot:
+                coordinates = [spot['lat'], spot['lng']]
+            
             activities.append({
                 'time': current_time,
                 'type': 'spot',
@@ -4751,7 +5063,7 @@ def generate_optimal_route(selected_spots, travel_days, travel_style, transport_
                 'location': spot['city'],
                 'duration': '2-3時間',
                 'description': spot.get('summary', spot.get('description', ''))[:100] + '...',
-                'coordinates': spot.get('coordinates'),  # 座標データを追加
+                'coordinates': coordinates,  # 修正された座標データ
                 'spot_data': spot  # 完全なスポットデータを保存
             })
             
