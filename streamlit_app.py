@@ -182,7 +182,6 @@ def get_background_image_css():
                 background-position: center center;
                 background-attachment: fixed;
                 background-repeat: no-repeat;
-                min-height: 100vh;
                 position: relative;
             }}
             
@@ -257,13 +256,6 @@ def get_background_image_css():
             /* さらに Streamlit の自動トップマージンを無効化 */
             section.main > div {{
                 padding-top: 0 !important;
-            }}
-            
-            .home-background {{
-                background: transparent;
-                min-height: 100vh;
-                padding: 0;
-                margin: 0;
             }}
             
             .home-content {{
@@ -1396,7 +1388,6 @@ def get_background_image_css():
                     #2D1B69 100%);
                 background-size: 400% 400%;
                 animation: gradientShift 15s ease infinite;
-                min-height: 100vh;
                 position: relative;
             }
             
@@ -1422,15 +1413,6 @@ def get_background_image_css():
                 0% { background-position: 0% 50%; }
                 50% { background-position: 100% 50%; }
                 100% { background-position: 0% 50%; }
-            }
-            
-            .home-background {
-                background: transparent;
-                min-height: 100vh;
-                padding: 0;
-                margin: 0;
-                position: relative;
-                z-index: 2;
             }
             
             .home-content {
@@ -3531,8 +3513,7 @@ def show_home_page(spots):
     # 背景画像のCSSを適用
     st.markdown(get_background_image_css(), unsafe_allow_html=True)
     
-    # 背景画像コンテナの開始
-    st.markdown('<div class="home-background">', unsafe_allow_html=True)
+    # コンテナの開始
     st.markdown('<div class="home-content">', unsafe_allow_html=True)
     
     # ヘッダーセクション
@@ -3733,9 +3714,8 @@ def show_home_page(spots):
         </div>
         """, unsafe_allow_html=True)
     
-    # 背景画像コンテナの終了
+    # コンテナの終了
     st.markdown('</div>', unsafe_allow_html=True)  # home-content
-    st.markdown('</div>', unsafe_allow_html=True)  # home-background
 
 def show_map_page(spots):
     """マップページ"""
@@ -4759,9 +4739,8 @@ def show_spots_page(spots):
             
             st.markdown("---")  # 区切り線を追加
     
-    # 背景画像コンテナの終了
+    # コンテナの終了
     st.markdown('</div>', unsafe_allow_html=True)  # home-content 終了
-    st.markdown('</div>', unsafe_allow_html=True)  # home-background 終了
 
 def show_route_page(spots):
     """観光ルート作成ページ"""
