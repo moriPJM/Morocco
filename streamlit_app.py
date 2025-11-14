@@ -11,6 +11,7 @@ import json
 import os
 import traceback
 import time
+import random
 from functools import wraps
 import logging
 from datetime import datetime
@@ -20,16 +21,73 @@ from typing import Dict, List, Optional
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# エラーハンドリングデコレーター
+# ユーザー入力検証関数
+def validate_user_input(input_text, max_length=100, min_length=1):
+    """ユーザー入力の検証"""
+    if not input_text:
+        return False, "入力が空です"
+    
+    # 文字列の場合の処理
+    if isinstance(input_text, str):
+        text = input_text.strip()
+        if len(text) < min_length:
+            return False, f"入力は{min_length}文字以上である必要があります"
+        if len(text) > max_length:
+            return False, f"入力は{max_length}文字以下である必要があります"
+        
+        # XSS防止のための基本的なサニタイゼーション
+        import html
+        sanitized = html.escape(text)
+        return True, sanitized
+    
+    return True, input_text
+
+def safe_file_operation(file_path, operation_type="read"):
+    """ファイル操作の安全性チェック"""
+    try:
+        # ファイルパスの正規化
+        normalized_path = os.path.normpath(file_path)
+        
+        # パストラバーサル攻撃防止
+        if ".." in normalized_path or normalized_path.startswith("/"):
+            logger.warning(f"Suspicious file path detected: {file_path}")
+            return False, "不正なファイルパスです"
+        
+        # ファイル存在チェック（読み込み時）
+        if operation_type == "read" and not os.path.exists(normalized_path):
+            return False, f"ファイルが見つかりません: {normalized_path}"
+        
+        return True, normalized_path
+    except Exception as e:
+        logger.error(f"File operation validation error: {e}")
+        return False, f"ファイル操作エラー: {str(e)}"
+
+# エラーハンドリングデコレーター（強化版）
 def handle_errors(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
+        except FileNotFoundError as e:
+            logger.error(f"File not found in {func.__name__}: {str(e)}")
+            st.error("📁 ファイルが見つかりません。管理者にお問い合わせください。")
+            return None
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON decode error in {func.__name__}: {str(e)}")
+            st.error("📄 データファイルの形式が正しくありません。")
+            return None
+        except PermissionError as e:
+            logger.error(f"Permission error in {func.__name__}: {str(e)}")
+            st.error("🔒 ファイルへのアクセス権限がありません。")
+            return None
+        except ValueError as e:
+            logger.error(f"Value error in {func.__name__}: {str(e)}")
+            st.error(f"⚠️ 入力値が正しくありません: {str(e)}")
+            return None
         except Exception as e:
-            logger.error(f"Error in {func.__name__}: {str(e)}")
-            st.error(f"❌ エラーが発生しました: {str(e)}")
-            with st.expander("🔍 エラー詳細", expanded=False):
+            logger.error(f"Unexpected error in {func.__name__}: {str(e)}")
+            st.error(f"❌ 予期しないエラーが発生しました: {str(e)}")
+            with st.expander("🔍 エラー詳細（開発者向け）", expanded=False):
                 st.code(traceback.format_exc())
             return None
     return wrapper
@@ -63,6 +121,1083 @@ def init_theme():
     except Exception as e:
         logger.warning(f"Theme initialization failed: {e}")
         return "ライト"
+
+@handle_errors
+def get_background_image_css():
+    """背景画像のCSSを取得（エラーハンドリング強化版）"""
+    import base64
+    
+    # 背景画像ファイルのパス
+    bg_image_path = r"c:\Users\user\Pictures\grjebasj2c5fmtqrxoh1.jpg"
+    
+    try:
+        # ファイル安全性チェック
+        is_safe, result = safe_file_operation(bg_image_path, "read")
+        if not is_safe:
+            logger.warning(f"Background image file check failed: {result}")
+            raise FileNotFoundError(result)
+        
+        # ファイルサイズチェック（10MB制限）
+        file_size = os.path.getsize(bg_image_path)
+        if file_size > 10 * 1024 * 1024:  # 10MB
+            logger.warning(f"Background image too large: {file_size} bytes")
+            raise ValueError(f"画像ファイルが大きすぎます: {file_size / (1024*1024):.1f}MB")
+        
+        # 画像ファイルをBase64エンコード
+        with open(bg_image_path, "rb") as f:
+            img_data = base64.b64encode(f.read()).decode()
+        
+        logger.info(f"Background image loaded successfully: {len(img_data)} chars")
+        
+        return f"""
+        <style>
+            /* Majorelle Blue + Gold Color Palette */
+            :root {{
+                --majorelle-blue: #6246EA;
+                --majorelle-blue-light: rgba(98, 70, 234, 0.1);
+                --majorelle-blue-medium: rgba(98, 70, 234, 0.6);
+                --majorelle-blue-dark: #4A34C7;
+                --gold: #FFD700;
+                --gold-light: rgba(255, 215, 0, 0.1);
+                --gold-medium: rgba(255, 215, 0, 0.3);
+                --white-glass: rgba(255, 255, 255, 0.12);
+                --white-glass-strong: rgba(255, 255, 255, 0.18);
+                --text-primary: #2D1B69;
+                --text-secondary: #6B7280;
+                --text-light: rgba(255, 255, 255, 0.9);
+            }}
+            
+            .stApp {{
+                background-image: 
+                    linear-gradient(to bottom, 
+                        rgba(255, 255, 255, 0.3) 0%,
+                        rgba(255, 255, 255, 0.1) 15%,
+                        rgba(98, 70, 234, 0.2) 30%,
+                        rgba(77, 52, 199, 0.3) 50%,
+                        rgba(45, 27, 105, 0.5) 80%,
+                        rgba(0, 0, 0, 0.4) 100%
+                    ), 
+                    linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3)),
+                    url(data:image/jpeg;base64,{img_data});
+                background-size: 110% auto;
+                background-position: center top;
+                background-attachment: fixed;
+                min-height: 100vh;
+                background-color: linear-gradient(135deg, 
+                    var(--majorelle-blue-light) 0%, 
+                    var(--gold-light) 100%);
+                animation: subtleParallax 20s ease-in-out infinite;
+                position: relative;
+            }}
+            
+            .stApp::before {{
+                content: "";
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.2);
+                z-index: 0;
+                pointer-events: none;
+            }}
+            
+            .main {{
+                position: relative;
+                z-index: 1;
+            }}
+            
+            @keyframes subtleParallax {{
+                0%, 100% {{ 
+                    background-position: center top;
+                    background-size: 110% auto;
+                }}
+                50% {{ 
+                    background-position: center bottom;
+                    background-size: 115% auto;
+                }}
+            }}
+            
+            /* Streamlit container adjustments for removing top spacing */
+            .main .block-container {{
+                padding-top: 0 !important;
+                margin-top: -50px !important;
+                max-width: 1200px;
+                padding-bottom: 0 !important;
+            }}
+            
+            .stApp > header {{
+                height: 0 !important;
+                display: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }}
+            
+            .main > div:first-child {{
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+            }}
+            
+            /* Remove Streamlit default margins */
+            .main {{
+                padding-top: 0 !important;
+                margin-top: 0 !important;
+            }}
+            
+            /* Remove any default spacing from Streamlit elements */
+            [data-testid="stAppViewContainer"] {{
+                padding-top: 0 !important;
+            }}
+            
+            [data-testid="stHeader"] {{
+                display: none !important;
+                height: 0 !important;
+            }}
+            
+            [data-testid="stToolbar"] {{
+                display: none !important;
+            }}
+            
+            /* ページ全体の上余白を削除 */
+            main > div, .block-container {{
+                padding-top: 0 !important;
+                margin-top: 0 !important;
+            }}
+
+            /* タイトル部分の余白を削る */
+            header {{
+                margin-top: -2rem !important;
+            }}
+
+            /* さらに Streamlit の自動トップマージンを無効化 */
+            section.main > div {{
+                padding-top: 0 !important;
+            }}
+            
+            .home-background {{
+                background: transparent;
+                min-height: 100vh;
+                padding: 0;
+                margin: -20px -16px -16px -16px;
+            }}
+            
+            .home-content {{
+                background: rgba(255, 255, 255, 0.35);
+                padding: 20px 24px 24px 24px;
+                border-radius: 20px;
+                backdrop-filter: blur(32px) saturate(250%);
+                box-shadow: 
+                    0 16px 48px rgba(0, 0, 0, 0.2),
+                    0 8px 24px rgba(0, 0, 0, 0.15),
+                    inset 0 2px 0 rgba(255, 255, 255, 0.7),
+                    inset 0 -2px 0 rgba(0, 0, 0, 0.1);
+                border: 1px solid rgba(255, 255, 255, 0.5);
+                margin-top: 0;
+                position: relative;
+                z-index: 2;
+            }}
+            
+            /* Section Background Hierarchy */
+            .section-background-primary {{
+                background: linear-gradient(135deg, 
+                    var(--white-glass-strong) 0%, 
+                    var(--majorelle-blue-light) 100%);
+                border-radius: 20px;
+                padding: 24px;
+                margin: 16px 0;
+                backdrop-filter: blur(20px) saturate(180%);
+                border: 1px solid rgba(255, 255, 255, 0.3);
+            }}
+            
+            .section-background-secondary {{
+                background: linear-gradient(135deg, 
+                    var(--gold-light) 0%, 
+                    var(--white-glass) 100%);
+                border-radius: 16px;
+                padding: 20px;
+                margin: 12px 0;
+                backdrop-filter: blur(16px) saturate(160%);
+                border: 1px solid rgba(255, 215, 0, 0.2);
+            }}
+            
+            .section-background-tertiary {{
+                background: var(--white-glass);
+                border-radius: 12px;
+                padding: 16px;
+                margin: 8px 0;
+                backdrop-filter: blur(12px) saturate(140%);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }}
+            
+            .home-header {{
+                background: linear-gradient(135deg, var(--majorelle-blue) 0%, var(--majorelle-blue-dark) 50%, var(--gold) 100%);
+                color: var(--text-light);
+                padding: 40px 32px 48px 32px;
+                border-radius: 20px;
+                text-align: center;
+                margin: -20px -24px 32px -24px;
+                box-shadow: 
+                    0 20px 40px rgba(98, 70, 234, 0.3),
+                    0 8px 16px rgba(98, 70, 234, 0.2),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+                position: relative;
+                overflow: hidden;
+            }}
+            
+            .home-header::before {{
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: url(data:image/jpeg;base64,{img_data});
+                background-size: cover;
+                background-position: center;
+                opacity: 0.1;
+                z-index: -1;
+            }}
+            
+            .home-header h1 {{
+                font-size: 2.8rem;
+                margin-bottom: 16px;
+                text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+                font-weight: 700;
+                letter-spacing: 0.5px;
+                line-height: 1.3;
+                animation: titleSlideIn 1.2s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+                opacity: 0;
+                transform: translateY(30px);
+            }}
+            
+            .home-header p {{
+                font-size: 1.1rem;
+                margin: 0;
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+                font-weight: 400;
+                opacity: 0;
+                line-height: 1.7;
+                animation: subtitleFadeIn 1s cubic-bezier(0.4, 0.0, 0.2, 1) 0.3s forwards;
+                transform: translateY(20px);
+            }}
+            
+            @keyframes titleSlideIn {{
+                0% {{
+                    opacity: 0;
+                    transform: translateY(30px) scale(0.95);
+                }}
+                100% {{
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }}
+            }}
+            
+            @keyframes subtitleFadeIn {{
+                0% {{
+                    opacity: 0;
+                    transform: translateY(20px);
+                }}
+                100% {{
+                    opacity: 0.95;
+                    transform: translateY(0);
+                }}
+            }}
+            
+            .metric-container {{
+                background: var(--white-glass);
+                border-radius: 12px;
+                padding: 20px;
+                margin: 16px 0;
+                backdrop-filter: blur(16px) saturate(180%);
+                box-shadow: 
+                    0 4px 16px rgba(98, 70, 234, 0.1),
+                    0 1px 4px rgba(0, 0, 0, 0.1),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }}
+            
+            .spot-card {{
+                background: rgba(255, 255, 255, 0.3);
+                border-radius: 12px;
+                padding: 24px;
+                margin: 16px 0;
+                backdrop-filter: blur(28px) saturate(220%);
+                box-shadow: 
+                    0 12px 40px rgba(98, 70, 234, 0.2),
+                    0 6px 20px rgba(0, 0, 0, 0.15),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+                    inset 0 -1px 0 rgba(0, 0, 0, 0.08);
+                border: 1px solid rgba(255, 255, 255, 0.4);
+                transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+                position: relative;
+                z-index: 2;
+            }}
+            
+            .spot-card:hover {{
+                transform: translateY(-6px) scale(1.01);
+                filter: brightness(1.03);
+                box-shadow: 
+                    0 20px 40px rgba(98, 70, 234, 0.25),
+                    0 12px 24px rgba(0, 0, 0, 0.15),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+            }}
+            
+            .spot-title {{
+                font-size: 1.3rem;
+                font-weight: 600;
+                color: white;
+                margin-bottom: 8px;
+                line-height: 1.4;
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+            }}
+            
+            .spot-meta {{
+                color: white;
+                margin-bottom: 16px;
+                font-size: 0.95rem;
+                line-height: 1.6;
+                text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+            }}
+            
+            .category-badge {{
+                background: linear-gradient(135deg, var(--majorelle-blue), var(--majorelle-blue-dark));
+                color: white;
+                padding: 8px 14px;
+                border-radius: 8px;
+                font-size: 0.8rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                box-shadow: 0 3px 12px rgba(98, 70, 234, 0.4);
+                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }}
+            
+            .verified-badge {{
+                background: linear-gradient(135deg, var(--gold), #FFA500);
+                color: #1a1a1a;
+                padding: 8px 14px;
+                border-radius: 8px;
+                font-size: 0.8rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                box-shadow: 0 3px 12px rgba(255, 215, 0, 0.4);
+                text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+                border: 1px solid rgba(255, 255, 255, 0.3);
+            }}
+            
+            .recommendation-card {{
+                background: rgba(255, 255, 255, 0.4);
+                border-radius: 12px;
+                padding: 0;
+                margin: 16px 0;
+                backdrop-filter: blur(32px) saturate(250%);
+                box-shadow: 
+                    0 16px 48px rgba(98, 70, 234, 0.25),
+                    0 8px 24px rgba(0, 0, 0, 0.2),
+                    inset 0 2px 0 rgba(255, 255, 255, 0.7),
+                    inset 0 -2px 0 rgba(0, 0, 0, 0.1);
+                border: 2px solid rgba(255, 255, 255, 0.5);
+                transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+                height: 380px;
+                display: flex;
+                flex-direction: column;
+                position: relative;
+                overflow: hidden;
+                z-index: 2;
+            }}
+            
+            .card-thumbnail {{
+                position: relative;
+                height: 120px;
+                overflow: hidden;
+                border-radius: 12px 12px 8px 8px;
+            }}
+            
+            .thumbnail-placeholder {{
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(135deg, var(--majorelle-blue-light), var(--gold-light));
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: relative;
+            }}
+            
+            .thumbnail-icon {{
+                font-size: 3rem;
+                opacity: 0.8;
+                z-index: 2;
+                position: relative;
+            }}
+            
+            .thumbnail-gradient {{
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: linear-gradient(45deg, 
+                    var(--majorelle-blue-medium), 
+                    transparent 50%, 
+                    var(--gold-medium));
+                opacity: 0.6;
+            }}
+            
+            .recommendation-card::before {{
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 4px;
+                background: linear-gradient(90deg, var(--majorelle-blue), var(--gold));
+                opacity: 0.8;
+            }}
+            
+            .recommendation-card:hover {{
+                transform: translateY(-8px) scale(1.01);
+                filter: brightness(1.03);
+                box-shadow: 
+                    0 24px 48px rgba(98, 70, 234, 0.25),
+                    0 12px 24px rgba(0, 0, 0, 0.18),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+            }}
+            
+            .card-header {{
+                border-bottom: 2px solid var(--gold);
+                padding: 16px 20px 12px 20px;
+                margin-bottom: 0;
+                background: rgba(255, 255, 255, 0.2);
+                backdrop-filter: blur(8px);
+                border-radius: 12px 12px 0 0;
+            }}
+            
+            .card-title {{
+                font-size: 1.25rem;
+                font-weight: 700;
+                color: white;
+                margin: 0 0 8px 0;
+                line-height: 1.4;
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+            }}
+            
+            .card-location {{
+                color: white;
+                font-size: 0.9rem;
+                line-height: 1.6;
+                text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+            }}
+            
+            .card-content {{
+                flex-grow: 1;
+                display: flex;
+                flex-direction: column;
+                padding: 16px 20px 20px 20px;
+            }}
+            
+            .card-category {{
+                margin-bottom: 16px;
+            }}
+            
+            .card-description {{
+                color: white;
+                line-height: 1.6;
+                flex-grow: 1;
+                font-size: 0.9rem;
+                margin-bottom: 16px;
+                text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+            }}
+            
+            .card-features {{
+                margin-top: auto;
+            }}
+            
+            .feature-tag {{
+                background: rgba(255, 255, 255, 0.9);
+                color: var(--majorelle-blue-dark);
+                padding: 6px 12px;
+                border-radius: 8px;
+                font-size: 0.8rem;
+                font-weight: 600;
+                margin-right: 8px;
+                display: inline-block;
+                margin-bottom: 4px;
+                border: 1px solid var(--majorelle-blue-medium);
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+                text-shadow: none;
+            }}
+            
+            .city-card {{
+                background: var(--white-glass-strong);
+                border-radius: 12px;
+                padding: 24px;
+                text-align: center;
+                backdrop-filter: blur(18px) saturate(180%);
+                box-shadow: 
+                    0 6px 20px rgba(98, 70, 234, 0.12),
+                    0 2px 8px rgba(0, 0, 0, 0.08),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+                border: 1px solid rgba(255, 255, 255, 0.25);
+                transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+                height: 180px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }}
+            
+            .city-card:hover {{
+                transform: translateY(-6px) scale(1.01);
+                filter: brightness(1.03);
+                box-shadow: 
+                    0 16px 32px rgba(98, 70, 234, 0.22),
+                    0 8px 16px rgba(0, 0, 0, 0.15),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+            }}
+            
+            .info-section {{
+                background: var(--white-glass-strong);
+                border-radius: 12px;
+                padding: 24px;
+                backdrop-filter: blur(18px) saturate(180%);
+                box-shadow: 
+                    0 8px 24px rgba(98, 70, 234, 0.12),
+                    0 4px 12px rgba(0, 0, 0, 0.08),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+                border: 1px solid rgba(255, 255, 255, 0.25);
+            }}
+            
+            .info-section h3 {{
+                color: white;
+                margin-bottom: 16px;
+                border-bottom: 3px solid var(--gold);
+                padding-bottom: 8px;
+                font-size: 1.25rem;
+                font-weight: 700;
+                line-height: 1.4;
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+            }}
+            
+            .info-card {{
+                background: var(--white-glass);
+                border-radius: 8px;
+                padding: 16px;
+                margin-top: 16px;
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                box-shadow: 0 2px 8px rgba(98, 70, 234, 0.08);
+            }}
+            
+            .info-card h4 {{
+                color: white;
+                margin-bottom: 12px;
+                font-size: 1.1rem;
+                font-weight: 600;
+                line-height: 1.4;
+                text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+            }}
+            
+            .info-card ul {{
+                margin: 0;
+                padding-left: 20px;
+            }}
+            
+            .info-card li {{
+                color: white;
+                margin-bottom: 8px;
+                line-height: 1.6;
+                font-size: 0.9rem;
+                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+            }}
+            
+            /* Typography Hierarchy - Improved Readability */
+            h1 {{ 
+                font-size: 2.5rem; 
+                line-height: 1.3; 
+                font-weight: 700; 
+                margin-bottom: 1rem;
+                color: white;
+                text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+            }}
+            h2 {{ 
+                font-size: 2rem; 
+                line-height: 1.4; 
+                font-weight: 600; 
+                margin-bottom: 0.8rem;
+                color: white;
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+            }}
+            h3 {{ 
+                font-size: 1.5rem; 
+                line-height: 1.4; 
+                font-weight: 600; 
+                margin-bottom: 0.6rem;
+                color: white;
+                text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+            }}
+            h4 {{ 
+                font-size: 1.2rem; 
+                line-height: 1.5; 
+                font-weight: 600; 
+                margin-bottom: 0.5rem;
+                color: white;
+                text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+            }}
+            p, li {{ 
+                font-size: 1rem;
+                line-height: 1.7; 
+                margin-bottom: 1rem;
+                color: white;
+                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+                color: #2a2a2a;
+            }}
+            
+            /* Enhanced text contrast for cards */
+            .recommendation-card p, .spot-card p, .city-card p {{
+                background: rgba(255, 255, 255, 0.8);
+                padding: 8px 12px;
+                border-radius: 6px;
+                margin: 8px 0;
+                color: #1a1a1a;
+                border: 1px solid rgba(255, 255, 255, 0.3);
+            }}
+            
+            /* Small text for descriptions */
+            .small-text {{
+                font-size: 0.9rem;
+                line-height: 1.6;
+            }}
+            
+            /* Large text for emphasis */
+            .large-text {{
+                font-size: 1.1rem;
+                line-height: 1.6;
+                font-weight: 500;
+            }}
+            
+            /* Scroll Fade-In Animation */
+            .fade-in-element {{
+                opacity: 0;
+                transform: translateY(30px);
+                transition: all 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
+            }}
+            
+            .fade-in-element.fade-in-visible {{
+                opacity: 1;
+                transform: translateY(0);
+            }}
+            
+            .stale-in-left {{
+                opacity: 0;
+                transform: translateX(-30px);
+                transition: all 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
+            }}
+            
+            .stale-in-left.fade-in-visible {{
+                opacity: 1;
+                transform: translateX(0);
+            }}
+            
+            .stale-in-right {{
+                opacity: 0;
+                transform: translateX(30px);
+                transition: all 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
+            }}
+            
+            .stale-in-right.fade-in-visible {{
+                opacity: 1;
+                transform: translateX(0);
+            }}
+            
+            /* Staggered Animation for Cards */
+            .recommendation-card:nth-child(1) {{
+                animation-delay: 0.1s;
+            }}
+            
+            .recommendation-card:nth-child(2) {{
+                animation-delay: 0.2s;
+            }}
+            
+            .recommendation-card:nth-child(3) {{
+                animation-delay: 0.3s;
+            }}
+            
+            .recommendation-card:nth-child(4) {{
+                animation-delay: 0.4s;
+            }}
+            
+            .card-appear {{
+                animation: cardAppear 0.8s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }}
+            
+            @keyframes cardAppear {{
+                0% {{
+                    opacity: 0;
+                    transform: translateY(20px) scale(0.95);
+                }}
+                100% {{
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }}
+            }}
+            
+            /* Page Load Animation */
+            @keyframes pageLoadFade {{
+                0% {{
+                    opacity: 0;
+                    transform: translateY(20px);
+                }}
+                100% {{
+                    opacity: 1;
+                    transform: translateY(0);
+                }}
+            }}
+            
+            .main {{
+                animation: pageLoadFade 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
+            }}
+            
+            /* Smooth Scroll Enhancement */
+            html {{
+                scroll-behavior: smooth;
+                scroll-padding-top: 20px;
+            }}
+            
+            /* Pulse Loading Animation for Elements */
+            .loading-pulse {{
+                animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            }}
+            
+            @keyframes pulse {{
+                0%, 100% {{
+                    opacity: 1;
+                }}
+                50% {{
+                    opacity: .5;
+                }}
+            }}
+            
+            /* Smooth transitions for all interactive elements */
+            .spot-card, .recommendation-card, .city-card, .info-section {{
+                transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1) !important;
+            }}
+            
+            /* Enhanced Hover Glow Effect */
+            .spot-card:hover, .recommendation-card:hover, .city-card:hover {{
+                box-shadow: 
+                    0 0 40px rgba(98, 70, 234, 0.3),
+                    0 20px 40px rgba(98, 70, 234, 0.25),
+                    0 12px 24px rgba(0, 0, 0, 0.15),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+            }}
+            
+            /* Text Readability Improvements */
+            .text-box {{
+                background: rgba(0, 0, 0, 0.4);
+                padding: 1rem;
+                border-radius: 12px;
+                margin: 1rem 0;
+                backdrop-filter: blur(8px);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }}
+            
+            .readable-text {{
+                color: white !important;
+                text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+                line-height: 1.6;
+            }}
+            
+            .text-overlay {{
+                background: rgba(0, 0, 0, 0.5);
+                padding: 1.5rem;
+                border-radius: 16px;
+                margin: 1rem 0;
+                backdrop-filter: blur(12px) saturate(150%);
+                border: 1px solid rgba(255, 255, 255, 0.15);
+                box-shadow: 
+                    0 8px 24px rgba(0, 0, 0, 0.3),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            }}
+            
+            .text-overlay h1, .text-overlay h2, .text-overlay h3, .text-overlay h4, .text-overlay p {{
+                color: white !important;
+                text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+                margin-bottom: 1rem;
+            }}
+            
+            .enhanced-readability {{
+                background: linear-gradient(135deg, 
+                    rgba(0, 0, 0, 0.6) 0%, 
+                    rgba(45, 27, 105, 0.5) 100%);
+                padding: 2rem;
+                border-radius: 20px;
+                margin: 1.5rem 0;
+                backdrop-filter: blur(16px) saturate(180%);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                box-shadow: 
+                    0 12px 32px rgba(0, 0, 0, 0.4),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            }}
+            
+            .enhanced-readability * {{
+                color: white !important;
+                text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+            }}
+            
+            /* Enhanced Buttons */
+            .stButton > button {{
+                background: linear-gradient(135deg, var(--majorelle-blue), var(--majorelle-blue-dark)) !important;
+                color: white !important;
+                border: none !important;
+                border-radius: 12px !important;
+                padding: 12px 24px !important;
+                font-weight: 600 !important;
+                font-size: 0.9rem !important;
+                box-shadow: 
+                    0 4px 12px rgba(98, 70, 234, 0.3),
+                    0 2px 6px rgba(0, 0, 0, 0.1) !important;
+                transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1) !important;
+                position: relative;
+                overflow: hidden;
+            }}
+            
+            .stButton > button::before {{
+                content: '';
+                position: absolute;
+                top: 0;
+                left: -100%;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(90deg, 
+                    transparent, 
+                    rgba(255, 255, 255, 0.2), 
+                    transparent);
+                transition: left 0.5s;
+            }}
+            
+            .stButton > button:hover::before {{
+                left: 100%;
+            }}
+            
+            .stButton > button:hover {{
+                background: linear-gradient(135deg, var(--majorelle-blue-dark), var(--gold)) !important;
+                transform: translateY(-3px) scale(1.02) !important;
+                filter: brightness(1.05) !important;
+                box-shadow: 
+                    0 12px 28px rgba(98, 70, 234, 0.5),
+                    0 6px 16px rgba(0, 0, 0, 0.2),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+            }}
+            
+            .stButton > button[data-baseweb="button"][kind="primary"] {{
+                background: linear-gradient(135deg, var(--gold), #FFA500) !important;
+                color: var(--text-primary) !important;
+                box-shadow: 
+                    0 4px 12px rgba(255, 215, 0, 0.4),
+                    0 2px 6px rgba(0, 0, 0, 0.1) !important;
+            }}
+            
+            .stButton > button[data-baseweb="button"][kind="primary"]:hover {{
+                background: linear-gradient(135deg, #FFA500, var(--majorelle-blue)) !important;
+                color: white !important;
+                transform: translateY(-3px) scale(1.02) !important;
+                filter: brightness(1.05) !important;
+                box-shadow: 
+                    0 12px 28px rgba(255, 165, 0, 0.5),
+                    0 6px 16px rgba(0, 0, 0, 0.2) !important;
+            }}
+            
+            /* Mobile Responsive Design */
+            @media (max-width: 768px) {{
+                .home-header {{
+                    padding: 24px 16px 32px 16px;
+                    margin: -16px -16px 24px -16px;
+                }}
+                
+                .home-header h1 {{
+                    font-size: 2rem !important;
+                    margin-bottom: 12px;
+                    line-height: 1.2;
+                }}
+                
+                .home-header p {{
+                    font-size: 1rem !important;
+                    line-height: 1.5;
+                }}
+                
+                .metric-container {{
+                    padding: 12px 8px !important;
+                    margin: 8px 4px !important;
+                }}
+                
+                .metric-container > div:first-child {{
+                    font-size: 2rem !important;
+                    margin-bottom: 4px;
+                }}
+                
+                .metric-container > div:nth-child(2) {{
+                    font-size: 1.5rem !important;
+                }}
+                
+                .metric-container > div:last-child {{
+                    font-size: 0.9rem !important;
+                }}
+                
+                .recommendation-card {{
+                    margin: 8px 0 !important;
+                    padding: 16px !important;
+                }}
+                
+                .card-title {{
+                    font-size: 1.1rem !important;
+                    margin-bottom: 8px;
+                }}
+                
+                .card-description {{
+                    font-size: 0.9rem !important;
+                    line-height: 1.4;
+                }}
+                
+                .info-section {{
+                    margin: 16px 0 !important;
+                }}
+                
+                .info-section h3 {{
+                    font-size: 1.3rem !important;
+                    margin-bottom: 12px;
+                }}
+                
+                .info-card {{
+                    padding: 12px !important;
+                }}
+                
+                .info-card h4 {{
+                    font-size: 1rem !important;
+                    margin-bottom: 8px;
+                }}
+                
+                .info-card li {{
+                    font-size: 0.9rem !important;
+                    line-height: 1.4;
+                    margin-bottom: 4px;
+                }}
+            }}
+            
+            @media (max-width: 480px) {{
+                .home-header h1 {{
+                    font-size: 1.7rem !important;
+                    letter-spacing: 0.3px;
+                }}
+                
+                .home-header p {{
+                    font-size: 0.95rem !important;
+                }}
+                
+                .metric-container {{
+                    padding: 10px 6px !important;
+                    margin: 6px 2px !important;
+                }}
+                
+                .recommendation-card {{
+                    padding: 12px !important;
+                }}
+                
+                .card-title {{
+                    font-size: 1rem !important;
+                }}
+                
+                .card-location {{
+                    font-size: 0.8rem !important;
+                }}
+                
+                .card-description {{
+                    font-size: 0.85rem !important;
+                }}
+            }}
+        </style>
+        """
+    except FileNotFoundError:
+        logger.warning("Background image not found, using fallback background")
+        return """
+        <style>
+            /* Majorelle Blue + Gold Color Palette - Fallback */
+            :root {
+                --majorelle-blue: #6246EA;
+                --majorelle-blue-light: rgba(98, 70, 234, 0.1);
+                --majorelle-blue-medium: rgba(98, 70, 234, 0.6);
+                --majorelle-blue-dark: #4A34C7;
+                --gold: #FFD700;
+                --gold-light: rgba(255, 215, 0, 0.1);
+                --gold-medium: rgba(255, 215, 0, 0.3);
+                --white-glass: rgba(255, 255, 255, 0.12);
+                --white-glass-strong: rgba(255, 255, 255, 0.18);
+                --text-primary: #2D1B69;
+                --text-secondary: #6B7280;
+                --text-light: rgba(255, 255, 255, 0.9);
+            }
+            
+            .stApp {
+                background: linear-gradient(135deg, 
+                    #6246EA 0%, 
+                    #4A34C7 25%,
+                    #FFD700 50%,
+                    #6246EA 75%,
+                    #2D1B69 100%);
+                background-size: 400% 400%;
+                animation: gradientShift 15s ease infinite;
+                min-height: 100vh;
+                position: relative;
+            }
+            
+            .stApp::before {
+                content: '';
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: 
+                    linear-gradient(to bottom, 
+                        rgba(255, 255, 255, 0.3) 0%,
+                        rgba(255, 255, 255, 0.1) 20%,
+                        rgba(0, 0, 0, 0.1) 60%,
+                        rgba(0, 0, 0, 0.2) 100%
+                    );
+                pointer-events: none;
+                z-index: 1;
+            }
+            
+            @keyframes gradientShift {
+                0% { background-position: 0% 50%; }
+                50% { background-position: 100% 50%; }
+                100% { background-position: 0% 50%; }
+            }
+            
+            .home-background {
+                background: transparent;
+                min-height: 100vh;
+                padding: 8px;
+                margin: -8px -16px -16px -16px;
+                position: relative;
+                z-index: 2;
+            }
+            
+            .home-content {
+                background: var(--white-glass-strong);
+                padding: 24px;
+                border-radius: 20px;
+                backdrop-filter: blur(20px) saturate(180%);
+                box-shadow: 
+                    0 8px 32px rgba(0, 0, 0, 0.12),
+                    0 2px 16px rgba(0, 0, 0, 0.08),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                margin-top: 0;
+            }
+        </style>
+        """
 
 def get_theme_css(theme):
     """テーマに応じたCSSを取得"""
@@ -388,6 +1523,21 @@ st.markdown(get_theme_css(current_theme), unsafe_allow_html=True)
 @measure_performance
 def load_spots_data():
     """観光地データを読み込み"""
+    try:
+        # 外部JSONファイルから読み込み
+        json_path = os.path.join(os.path.dirname(__file__), 'data', 'spots.json')
+        if os.path.exists(json_path):
+            with open(json_path, 'r', encoding='utf-8') as f:
+                spots = json.load(f)
+            logger.info(f"Loaded {len(spots)} spots from external JSON file")
+            return spots
+        else:
+            logger.warning("External JSON file not found, using embedded data")
+    except Exception as e:
+        logger.error(f"Error loading external JSON: {e}")
+        st.warning("⚠️ データファイルの読み込みに失敗しました。内蔵データを使用します。")
+    
+    # フォールバック：内蔵データ
     spots = [
         # マラケシュの観光地（15箇所）
         {
@@ -1782,20 +2932,12 @@ def main():
 
 def show_main_app():
     """メインアプリケーションの表示"""
-    # ヘッダー
-    st.markdown("""
-    <div class="main-header">
-        <h1>🕌 モロッコ観光ガイド</h1>
-        <p>Morocco Tourism Guide - あなたの完璧なモロッコ旅行をサポート</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
     # サイドバー
     st.sidebar.title("🧭 ナビゲーション")
     
     # ページ選択
     current_page = st.session_state.get('current_page', '🏠 ホーム')
-    page_options = ["🏠 ホーム", "🗺️ マップ", "📍 観光地一覧", "🏛️ モロッコ文化・歴史", "🤖 AI観光ガイド", "⚙️ 設定"]
+    page_options = ["🏠 ホーム", "🗺️ マップ", "📍 観光地一覧", "🛣️ 観光ルート", "🏛️ モロッコ文化・歴史", "🤖 AI観光ガイド", "⚙️ 設定"]
     
     page_index = 0
     if current_page in page_options:
@@ -1828,6 +2970,8 @@ def show_main_app():
         show_map_page(spots)
     elif page == "📍 観光地一覧":
         show_spots_page(spots)
+    elif page == "🛣️ 観光ルート":
+        show_route_page(spots)
     elif page == "🏛️ モロッコ文化・歴史":
         show_culture_history_page()
     elif page == "🤖 AI観光ガイド":
@@ -1839,6 +2983,10 @@ def show_spot_detail_by_id(spot_id):
     """IDによる詳細ページ表示"""
     spots = load_spots_data()
     
+    # 前のページ情報を保存（初回のみ）
+    if 'previous_page' not in st.session_state:
+        st.session_state.previous_page = st.session_state.get('current_page', '📍 観光地一覧')
+    
     # IDで観光地を検索
     spot = None
     for s in spots:
@@ -1848,8 +2996,14 @@ def show_spot_detail_by_id(spot_id):
     
     if not spot:
         st.error("⚠️ 指定された観光地が見つかりません")
-        if st.button("← 観光地一覧に戻る"):
+        if st.button("← 観光地一覧に戻る", key="map_back_to_list"):
             st.query_params.clear()
+            # 前のページに戻る
+            if 'previous_page' in st.session_state and st.session_state.previous_page:
+                st.session_state.current_page = st.session_state.previous_page
+            else:
+                st.session_state.current_page = '📍 観光地一覧'
+            st.session_state.previous_page = None  # リセット
             st.rerun()
         return
     
@@ -1872,53 +3026,445 @@ def show_spot_detail_by_id(spot_id):
     st.sidebar.markdown("---")
     if st.sidebar.button("← 観光地一覧に戻る", use_container_width=True):
         st.query_params.clear()
+        # 前のページに戻る
+        if 'previous_page' in st.session_state and st.session_state.previous_page:
+            st.session_state.current_page = st.session_state.previous_page
+        else:
+            st.session_state.current_page = '📍 観光地一覧'
+        st.session_state.previous_page = None  # リセット
         st.rerun()
     
     # 詳細情報を表示
     show_spot_details(spot)
+def show_tourism_precautions_section():
+    """観光での注意点セクション"""
+    st.markdown("### ⚠️ モロッコ観光での注意点・マナー")
+    
+    st.markdown("""
+    モロッコは魅力的な観光地ですが、異なる文化や環境のため、
+    事前に知っておくべき注意点やマナーがあります。
+    安全で快適な旅行のために、以下の情報をご確認ください。
+    """)
+    
+    # 文化・宗教的注意点
+    st.markdown("#### 🕌 文化・宗教的マナー")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("""
+        **👔 服装について**
+        - **宗教施設**: 肌の露出を控える（長袖・長ズボン必須）
+        - **女性**: 特に肩・膝・胸元を覆う服装
+        - **男性**: タンクトップ・短パンは避ける
+        - **モスク**: 非ムスリムは一般的に入場不可
+        - **靴**: モスクや家庭では脱靴
+        
+        **📸 写真撮影マナー**
+        - **人物**: 必ず許可を取る（特に女性）
+        - **宗教施設**: 撮影禁止の場所あり
+        - **軍事施設**: 撮影厳禁
+        - **料金**: 写真撮影に料金を要求される場合あり
+        """)
+    
+    with col2:
+        st.markdown("""
+        **🤝 社会的マナー**
+        - **握手**: 男性同士は問題なし、異性間は控えめに
+        - **左手**: 不浄とされるため食事・握手では使わない
+        - **足裏**: 人に向けるのは失礼
+        - **頭**: 子供の頭を触るのは避ける
+        - **アルコール**: 公共の場での飲酒は避ける
+        
+        **🗣️ 言語・コミュニケーション**
+        - **挨拶**: 「サラーム・アライクム」（平安があなたに）
+        - **感謝**: 「シュクラン」（ありがとう）
+        - **フランス語**: 観光地では通じることが多い
+        - **英語**: 若い世代や観光業者は理解
+        """)
+    
+    # 安全・防犯対策
+    st.markdown("#### 🛡️ 安全・防犯対策")
+    
+    tab1, tab2, tab3 = st.tabs(["💰 詐欺・ぼったくり対策", "🚨 一般的な安全対策", "🏥 健康・医療"])
+    
+    with tab1:
+        st.markdown("""
+        **🎯 よくある詐欺・トラブル**
+        
+        **偽ガイド詐欺**
+        - 「道に迷った観光客を助ける」と接近
+        - 法外なガイド料を請求
+        - **対策**: 公式ガイドのみ利用、事前料金確認
+        
+        **カーペット・お土産詐欺**
+        - 「特別価格」「友達だから」と甘い言葉
+        - 高額商品を売りつけ
+        - **対策**: 複数店舗で価格比較、即決避ける
+        
+        **タクシーぼったくり**
+        - メーター使用拒否、観光客料金
+        - 遠回りして料金つり上げ
+        - **対策**: メーター確認、事前料金交渉、配車アプリ利用
+        
+        **「無料」サービス詐欺**
+        - ヘナタトゥー、写真撮影後に料金請求
+        - **対策**: 「無料」には必ず事前確認
+        
+        **交渉のコツ**
+        - 最初の提示価格の30-50%から交渉開始
+        - 歩いて立ち去る演技も効果的
+        - 複数人で買い物する場合は事前に役割分担
+        """)
+    
+    with tab2:
+        st.markdown("""
+        **🔒 基本的な安全対策**
+        
+        **貴重品管理**
+        - パスポートコピーを持参、原本はホテル金庫
+        - 現金は分散して持つ
+        - 高価なアクセサリーは避ける
+        - バッグは前に持つ、ファスナーは常に閉める
+        
+        **移動時の注意**
+        - 夜間の一人歩きは避ける
+        - 人気のない路地は避ける
+        - 交通量の多い道路横断時は十分注意
+        - 長距離移動は信頼できる交通手段を選択
+        
+        **宿泊時の注意**
+        - ホテルのセキュリティ確認
+        - 部屋番号を他人に言わない
+        - ドアロックの確認を習慣化
+        - 緊急連絡先をメモして持参
+        
+        **緊急時の連絡先**
+        - 警察: 19
+        - 消防: 15
+        - 救急: 15
+        - 観光警察: 主要観光地に配備
+        - 日本領事館: +212-537-63-17-82（ラバト）
+        """)
+    
+    with tab3:
+        st.markdown("""
+        **🏥 健康・医療関連**
+        
+        **事前準備**
+        - 海外旅行保険への加入必須
+        - 常備薬の持参（処方箋も英語・フランス語で）
+        - 予防接種: 破傷風、A型肝炎推奨
+        - 医療情報の英語・フランス語訳準備
+        
+        **食事・飲水注意**
+        - 水道水は避け、ミネラルウォーター使用
+        - 氷入り飲料は避ける
+        - 生野菜・果物は信頼できる店のみ
+        - 屋台料理は衛生状態を確認
+        - 肉類は十分加熱されたもののみ
+        
+        **気候対策**
+        - 強い日差し: 日焼け止め（SPF50+）、帽子、サングラス必須
+        - 乾燥対策: リップクリーム、保湿クリーム
+        - 砂漠: 昼夜の寒暖差に対応する服装
+        - 高山地帯: 高山病対策、防寒具
+        
+        **よくある体調不良**
+        - 旅行者下痢: 整腸剤持参
+        - 脱水症状: こまめな水分補給
+        - 食あたり: 症状が続く場合は医療機関受診
+        - 日射病・熱中症: 適度な休憩と水分補給
+        """)
+    
+    # 実用的なアドバイス
+    st.markdown("#### 💡 実用的なアドバイス")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("""
+        **💰 お金関連**
+        - **通貨**: ディルハム（MAD）
+        - **両替**: 銀行・公認両替所を利用
+        - **クレジットカード**: 主要ホテル・レストランで利用可
+        - **現金**: 小額紙幣を多めに用意
+        - **チップ**: ホテル・レストランで10-15%程度
+        - **値段交渉**: スーク（市場）では必須
+        
+        **📱 通信・インターネット**
+        - **SIMカード**: 空港・携帯ショップで購入可
+        - **WiFi**: ホテル・カフェで利用可能
+        - **国際ローミング**: 高額になる場合あり
+        - **翻訳アプリ**: Google翻訳など事前ダウンロード
+        """)
+    
+    with col2:
+        st.markdown("""
+        **🎒 荷物・持ち物**
+        - **必需品**: パスポート、ビザ（不要）、航空券
+        - **服装**: 長袖・長ズボン、歩きやすい靴
+        - **日用品**: 日焼け止め、帽子、サングラス
+        - **薬品**: 常備薬、虫除けスプレー、絆創膏
+        - **電子機器**: 変換プラグ（Cタイプ）、モバイルバッテリー
+        - **現金**: 米ドル・ユーロを少額
+        
+        **⏰ 時間・スケジュール**
+        - **時差**: 日本より8時間遅れ（冬）、9時間遅れ（夏）
+        - **金曜日**: 多くの店舗が昼過ぎまで休業
+        - **ラマダン**: 期間中は営業時間が変更
+        - **昼寝時間**: 13-15時頃は多くの店が休憩
+        """)
+    
+    # 緊急時対応
+    st.markdown("#### 🚨 緊急時の対応")
+    
+    st.error("""
+    **緊急連絡先（モロッコ国内）**
+    - **警察**: 19
+    - **消防・救急**: 15
+    - **観光警察**: 主要観光地に配備
+    - **日本国総領事館（カサブランカ）**: +212-522-27-57-18
+    - **日本国大使館（ラバト）**: +212-537-63-17-82
+    """)
+    
+    st.warning("""
+    **トラブル発生時の対応**
+    1. **まず安全確保** - 危険な場所からの移動
+    2. **状況把握** - 何が起きたかを冷静に判断
+    3. **記録保存** - 日時、場所、関係者の記録
+    4. **連絡** - ホテル、保険会社、大使館等
+    5. **証拠保全** - 写真、レシート、証明書等の保管
+    """)
+    
+    st.info("""
+    **📞 24時間日本語サポート**
+    多くの海外旅行保険には24時間日本語サポートが付帯しています。
+    緊急時は遠慮なく利用し、適切なアドバイスを求めましょう。
+    """)
+    
+    # 最後に前向きなメッセージ
+    st.success("""
+    **🌟 安全で素晴らしいモロッコ旅行のために**
+    
+    これらの注意点は怖がらせるためではなく、より安全で快適な旅行を楽しんでいただくためのものです。
+    基本的な注意を守れば、モロッコは非常に魅力的で安全な観光地です。
+    美しい文化、温かい人々、素晴らしい体験があなたを待っています！
+    
+    **良い旅を！ Have a nice trip! رحلة سعيدة**
+    """)
 
-
-
+def get_feature_tags(features):
+    """安全にfeature tagsを生成する関数"""
+    try:
+        if not features:
+            return ""
+        
+        # featuresがリストでない場合の処理
+        if not isinstance(features, (list, tuple)):
+            if isinstance(features, dict):
+                features = list(features.keys())
+            elif isinstance(features, str):
+                features = [features]
+            else:
+                return ""
+        
+        # 最初の2つの要素を取得してHTMLタグを生成
+        feature_list = list(features)[:2]
+        return ''.join([f'<span class="feature-tag">{str(feature)}</span>' for feature in feature_list])
+    
+    except Exception as e:
+        logger.warning(f"Error generating feature tags: {e}")
+        return ""
 
 def show_home_page(spots):
     """ホームページ"""
+    # 背景画像のCSSを適用
+    st.markdown(get_background_image_css(), unsafe_allow_html=True)
+    
+    # 背景画像コンテナの開始
+    st.markdown('<div class="home-background">', unsafe_allow_html=True)
+    st.markdown('<div class="home-content">', unsafe_allow_html=True)
+    
+    # ヘッダーセクション
+    st.markdown("""
+    <div class="home-header">
+        <h1>🕌 モロッコ観光ガイドへようこそ</h1>
+        <p>あなたの完璧なモロッコ旅行をサポートします</p>
+        <div style="margin-top: 1.5rem;">
+            <span style="background: rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 25px; margin: 0.5rem; display: inline-block;">
+                🌍 40+ 観光地
+            </span>
+            <span style="background: rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 25px; margin: 0.5rem; display: inline-block;">
+                🗺️ 対話型マップ
+            </span>
+            <span style="background: rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 25px; margin: 0.5rem; display: inline-block;">
+                🤖 AI ガイド
+            </span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # 統計情報
+    cities = set(spot['city'] for spot in spots)
+    verified_count = sum(1 for spot in spots if spot.get('verified', False))
+    categories = set(spot['category'] for spot in spots)
+    
+    st.markdown(f"""
+    <div style="display: flex; justify-content: space-around; margin: 32px 0; flex-wrap: wrap;">
+        <div class="metric-container" style="text-align: center; flex: 1; margin: 8px;">
+            <div style="font-size: 2.5rem; margin-bottom: 8px;">📍</div>
+            <div style="font-size: 2rem; font-weight: 700; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">{len(spots)}</div>
+            <div style="color: white; font-weight: 500; line-height: 1.6; text-shadow: 0 1px 3px rgba(0,0,0,0.7);">観光地数</div>
+        </div>
+        <div class="metric-container" style="text-align: center; flex: 1; margin: 8px;">
+            <div style="font-size: 2.5rem; margin-bottom: 8px;">🏙️</div>
+            <div style="font-size: 2rem; font-weight: 700; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">{len(cities)}</div>
+            <div style="color: white; font-weight: 500; line-height: 1.6; text-shadow: 0 1px 3px rgba(0,0,0,0.7);">都市数</div>
+        </div>
+        <div class="metric-container" style="text-align: center; flex: 1; margin: 8px;">
+            <div style="font-size: 2.5rem; margin-bottom: 8px;">✅</div>
+            <div style="font-size: 2rem; font-weight: 700; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">{verified_count}</div>
+            <div style="color: white; font-weight: 500; line-height: 1.6; text-shadow: 0 1px 3px rgba(0,0,0,0.7);">認定スポット</div>
+        </div>
+        <div class="metric-container" style="text-align: center; flex: 1; margin: 8px;">
+            <div style="font-size: 2.5rem; margin-bottom: 8px;">🎯</div>
+            <div style="font-size: 2rem; font-weight: 700; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">{len(categories)}</div>
+            <div style="color: white; font-weight: 500; line-height: 1.6; text-shadow: 0 1px 3px rgba(0,0,0,0.7);">カテゴリ数</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # クイックアクションセクション
+    st.markdown("""
+    <div style="margin: 32px 0;">
+        <h2 style="text-align: center; color: var(--text-primary); margin-bottom: 24px; font-size: 2.4rem; font-weight: 600; line-height: 1.3;">🚀 今すぐ始める</h2>
+    </div>
+    """, unsafe_allow_html=True)
+    
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        st.metric("📍 観光地数", len(spots))
+        if st.button("🗺️ マップを見る", use_container_width=True, type="primary"):
+            st.session_state.current_page = "🗺️ マップ"
+            st.rerun()
     
     with col2:
-        cities = set(spot['city'] for spot in spots)
-        st.metric("🏙️ 都市数", len(cities))
+        if st.button("🛣️ ルート作成", use_container_width=True):
+            st.session_state.current_page = "🛣️ 観光ルート"
+            st.rerun()
     
     with col3:
-        verified_count = sum(1 for spot in spots if spot.get('verified', False))
-        st.metric("✅ 認定スポット", verified_count)
+        if st.button("🤖 AI に相談", use_container_width=True):
+            st.session_state.current_page = "🤖 AI観光ガイド"
+            st.rerun()
     
     with col4:
-        categories = set(spot['category'] for spot in spots)
-        st.metric("🎯 カテゴリ数", len(categories))
+        if st.button("📍 観光地一覧", use_container_width=True):
+            st.session_state.current_page = "📍 観光地一覧"
+            st.rerun()
     
     st.markdown("---")
     
     # おすすめ観光地
-    st.subheader("🌟 おすすめ観光地")
+    st.markdown("""
+    <div style="margin: 32px 0;">
+        <h2 style="text-align: center; color: var(--text-primary); margin-bottom: 24px; font-size: 2.4rem; font-weight: 600; line-height: 1.3;">🌟 おすすめ観光地</h2>
+        <p style="text-align: center; color: var(--text-secondary); margin-bottom: 32px; line-height: 1.6;">モロッコの魅力的な観光スポットをご紹介</p>
+    </div>
+    """, unsafe_allow_html=True)
     
     recommended_spots = [spot for spot in spots if spot.get('verified', False)][:6]
     
-    for i, spot in enumerate(recommended_spots):
-        with st.container():
-            st.markdown(f"""
-            <div class="spot-card">
-                <div class="spot-title">{spot['name']}</div>
-                <div class="spot-meta">
-                    📍 {spot['city']} • <span class="category-badge">{spot['category']}</span>
-                    {' • <span class="verified-badge">認定済み</span>' if spot.get('verified') else ''}
-                </div>
-                <p>{(spot.get('summary') or spot.get('description', '詳細情報なし'))[:100]}...</p>
+    # 3列のグリッドレイアウト
+    for i in range(0, len(recommended_spots), 3):
+        cols = st.columns(3)
+        for j, col in enumerate(cols):
+            if i + j < len(recommended_spots):
+                spot = recommended_spots[i + j]
+                with col:
+                    # 観光地の種類に応じたアイコンを選択
+                    category_icons = {
+                        '広場・市場': '🏛️',
+                        '宗教建築': '🕌',
+                        '歴史建築': '🏰',
+                        '自然': '🌿',
+                        '都市・建築': '🏢',
+                        '博物館': '🏛️',
+                        '文化施設': '🎭',
+                        '伝統工芸': '🎨'
+                    }
+                    thumbnail_icon = category_icons.get(spot['category'], '📍')
+                    
+                    st.markdown(f"""
+                    <div class="recommendation-card">
+                        <div class="card-thumbnail">
+                            <div class="thumbnail-placeholder">
+                                <div class="thumbnail-icon">{thumbnail_icon}</div>
+                                <div class="thumbnail-gradient"></div>
+                            </div>
+                        </div>
+                        <div class="card-header">
+                            <h3 class="card-title">{spot['name']}</h3>
+                            <div class="card-location">📍 {spot['city']}</div>
+                        </div>
+                        <div class="card-content">
+                            <div class="card-category">
+                                <span class="category-badge">{spot['category']}</span>
+                                {' <span class="verified-badge">✓ 認定済み</span>' if spot.get('verified') else ''}
+                            </div>
+                            <p class="card-description">{(spot.get('summary') or spot.get('description', '詳細情報なし'))[:80]}...</p>
+                            <div class="card-features">
+                                {get_feature_tags(spot.get('features', []))}
+                            </div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+
+    
+    # モロッコ豆知識セクション
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("""
+        <div class="info-section">
+            <h3>📚 モロッコ豆知識</h3>
+            <div class="info-card">
+                <h4>🌍 基本情報</h4>
+                <ul>
+                    <li><strong>首都</strong>: ラバト</li>
+                    <li><strong>最大都市</strong>: カサブランカ</li>
+                    <li><strong>人口</strong>: 約3,700万人</li>
+                    <li><strong>公用語</strong>: アラビア語、ベルベル語</li>
+                    <li><strong>通貨</strong>: モロッコ・ディルハム (MAD)</li>
+                </ul>
             </div>
-            """, unsafe_allow_html=True)
-            st.markdown("---")  # 区切り線を追加
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown("""
+        <div class="info-section">
+            <h3>🎭 文化・伝統</h3>
+            <div class="info-card">
+                <h4>✨ 特徴</h4>
+                <ul>
+                    <li><strong>建築</strong>: イスラム・アンダルシア様式</li>
+                    <li><strong>工芸</strong>: 絨毯、陶器、金属工芸</li>
+                    <li><strong>料理</strong>: タジン、クスクス</li>
+                    <li><strong>音楽</strong>: グナワ、アンダルシア音楽</li>
+                    <li><strong>祭り</strong>: バラ祭り、映画祭</li>
+                </ul>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # 背景画像コンテナの終了
+    st.markdown('</div>', unsafe_allow_html=True)  # home-content
+    st.markdown('</div>', unsafe_allow_html=True)  # home-background
 
 def show_map_page(spots):
     """マップページ"""
@@ -2061,165 +3607,532 @@ def show_map_page(spots):
 
 @handle_errors
 def show_spot_details(spot):
-    """観光地の詳細情報を表示 - 改良版レイアウト"""
+    """観光地の詳細情報を表示 - シンプル版"""
     
-    # カスタムCSS for 詳細ページ
-    st.markdown("""
-    <style>
-    .detail-hero {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 2rem;
-        border-radius: 15px;
-        color: white;
-        margin-bottom: 2rem;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-    }
-    .detail-hero h1 {
-        font-size: 2.5rem;
-        margin-bottom: 0.5rem;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-    }
-    .detail-hero .subtitle {
-        font-size: 1.2rem;
-        opacity: 0.9;
-        margin-bottom: 1rem;
-    }
-    .info-card {
-        background: white;
-        padding: 1.5rem;
-        border-radius: 12px;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-        border-left: 4px solid #667eea;
-        margin-bottom: 1rem;
-    }
-    .info-card h3 {
-        color: #667eea;
-        margin-bottom: 1rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    .badge {
-        display: inline-block;
-        padding: 0.25rem 0.75rem;
-        background: linear-gradient(45deg, #667eea, #764ba2);
-        color: white;
-        border-radius: 20px;
-        font-size: 0.9rem;
-        margin: 0.25rem;
-    }
-    .coordinates {
-        background: #f8f9fa;
-        padding: 0.5rem 1rem;
-        border-radius: 8px;
-        font-family: monospace;
-        border: 1px solid #e9ecef;
-    }
-    .section-divider {
-        height: 3px;
-        background: linear-gradient(90deg, #667eea, #764ba2);
-        border: none;
-        border-radius: 2px;
-        margin: 2rem 0;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+    # デバッグ出力
+    st.write("🔍 詳細表示関数が呼び出されました")
+    st.write(f"観光地データ: {spot.get('name', 'No name')}")
     
-    # ヒーローセクション
-    verified_badge = "✅ 認定観光地" if spot.get('verified') else ""
+    # シンプルなヘッダー
+    st.title(f"🏛️ {spot.get('name', '不明な観光地')}")
+    st.subheader(f"📍 {spot.get('city', '不明')} • 🎯 {spot.get('category', '不明')}")
+    
+    # 戻るボタン
+    if st.button("🔙 一覧に戻る", key="detail_back_button", type="primary"):
+        # 詳細モードを終了
+        st.session_state.detail_mode = False
+        st.session_state.selected_spot = None
+        
+        # URLパラメータをクリア
+        if 'spot_id' in st.query_params:
+            st.query_params.clear()
+        
+        # 前のページ情報があれば、そのページに戻る
+        if 'previous_page' in st.session_state and st.session_state.previous_page:
+            st.session_state.current_page = st.session_state.previous_page
+        else:
+            # デフォルトは観光地一覧に戻る
+            st.session_state.current_page = '📍 観光地一覧'
+        
+        # ページ状態をリセット
+        st.session_state.page_just_changed = True
+        st.rerun()
+    
+    st.markdown("---")
+    
+    # 基本的な詳細情報
+    if spot.get('summary'):
+        st.markdown("### 📋 概要")
+        st.write(spot['summary'])
+        
+    if spot.get('description'):
+        st.markdown("### 📝 詳細説明")
+        st.write(spot['description'])
+        
+    # 基本情報
+    st.markdown("### 📊 基本情報")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.write(f"**都市:** {spot.get('city', '不明')}")
+        st.write(f"**カテゴリ:** {spot.get('category', '不明')}")
+        
+    with col2:
+        if spot.get('coordinates'):
+            lat, lon = spot['coordinates']
+            st.write(f"**緯度:** {lat:.4f}")
+            st.write(f"**経度:** {lon:.4f}")
+    
+    # 追加ボタン
+    st.markdown("---")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        if st.button("📋 観光地一覧", key="detail_list_button", use_container_width=True):
+            st.query_params.clear()
+            st.session_state.current_page = '📍 観光地一覧'
+            st.rerun()
+            
+    with col2:
+        if st.button("🏠 ホーム", key="detail_home_button", use_container_width=True):
+            st.query_params.clear()
+            st.session_state.current_page = '🏠 ホーム'
+            st.rerun()
     st.markdown(f"""
     <div class="detail-hero">
         <h1>� {spot['name']}</h1>
         <div class="subtitle">
-            🏙️ {spot['city']} • 🎯 {spot['category']} {verified_badge}
+            🏙️ {spot['city']} • 🎯 {spot['category']}
         </div>
     </div>
     """, unsafe_allow_html=True)
     
     # メイン内容エリア
-    col1, col2 = st.columns([2, 1])
+    # 📋 概要・詳細解説セクション（大幅拡充）
+    st.markdown("## 📋 詳細解説")
     
-    with col1:
-        # 詳細情報タブ
-        if spot.get('summary'):
-            # 構造化された情報がある場合
-            tab1, tab2, tab3, tab4, tab5 = st.tabs([
-                "🎯 一言でどんな場所か", "✨ 特徴", "👀 見どころ", "🎪 楽しみ方・周り方", "🚗 アクセス・注意点"
+    # メイン解説
+    if spot.get('summary'):
+        st.markdown("### 🎯 概要")
+        st.write(spot['summary'])
+        st.markdown("---")
+    
+    if spot.get('description'):
+        st.markdown("### � 詳細説明")
+        st.write(spot['description'])
+        st.markdown("---")
+    
+    # 🌟 総合情報セクション（解説量大幅増加）
+    st.markdown("## 🌟 総合観光情報")
+    
+    # カテゴリ別詳細情報の拡充表示
+    category = spot.get('category', '')
+    city = spot.get('city', '')
+    
+    # カテゴリに応じた詳細解説を追加
+    if category == '歴史的建造物':
+        st.markdown(f"""
+        ### 🏛️ 歴史的価値について
+        {spot['name']}は{city}を代表する歴史的建造物として、長い歴史と文化的価値を持っています。
+        この建造物は時代を超えて多くの人々に愛され続けており、
+        モロッコの豊かな歴史と伝統を物語る重要な文化遺産です。
+        
+        **建築的特徴:**
+        - 伝統的なモロッコ建築様式
+        - 精密な装飾と職人技
+        - 地域固有の建材と技術の使用
+        - 気候に適応した設計思想
+        """)
+    elif category == '市場・スーク':
+        st.markdown(f"""
+        ### 🛍️ 市場文化について
+        {spot['name']}は{city}の商業・文化の中心地として機能する伝統的な市場です。
+        ここでは何世紀にもわたって受け継がれてきた商取引の伝統と、
+        現代的なニーズが見事に調和した独特の雰囲気を体験できます。
+        
+        **市場の特色:**
+        - 伝統工芸品と現代商品の共存
+        - 職人による手作り品の実演販売
+        - 地域特産品と輸入品の豊富な品揃え
+        - 活気ある交渉文化と人間関係
+        """)
+    elif category == '宮殿・庭園':
+        st.markdown(f"""
+        ### 🌺 宮殿文化について
+        {spot['name']}は{city}の王室文化と庭園芸術の粋を集めた貴重な文化遺産です。
+        精緻な建築美と計算された庭園設計は、イスラム芸術の最高峰を示しています。
+        
+        **宮殿の魅力:**
+        - 王室の生活様式と文化的背景
+        - イスラム庭園の設計思想と美学
+        - 季節ごとに変化する自然美
+        - 建築と自然の調和した空間設計
+        """)
+    else:
+        st.markdown(f"""
+        ### 🎨 文化的意義について
+        {spot['name']}は{city}を代表する{category}として、
+        この地域の文化と伝統を深く体現している重要な観光地です。
+        訪問者はここで本物のモロッコ文化に触れ、その魅力を存分に味わうことができます。
+        """)
+    
+    st.markdown("---")
+    
+    # 📚 詳細タブ構造（解説内容を大幅拡充）
+    if spot.get('features') or spot.get('highlights') or spot.get('how_to_enjoy') or spot.get('access_notes'):
+        tab1, tab2, tab3, tab4, tab5 = st.tabs([
+            "✨ 特徴・魅力", "👀 見どころガイド", "🎪 体験・楽しみ方", "🚗 アクセス・実用情報", "📊 詳細データ"
         ])
         
-            with tab1:
-                st.markdown("### 🎯 一言でどんな場所か（要約）")
-                st.write(spot.get('summary', '情報なし'))
-        
-            with tab2:
-                st.markdown("### ✨ 特徴（景観・歴史・文化など）")
-                features = spot.get('features', {})
+        with tab1:
+            st.markdown("## ✨ 特徴・魅力の詳細解説")
+            
+            # 特徴情報の拡充表示
+            features = spot.get('features', {})
+            if features:
+                st.markdown("### 🏛️ 主要な特徴")
                 if isinstance(features, dict):
                     for key, value in features.items():
-                        st.markdown(f"**{key}:** {value}")
+                        st.markdown(f"""
+                        **{key}**
+                        
+                        {value}
+                        
+                        この特徴は{spot['name']}を特別な場所にしている重要な要素の一つです。
+                        訪問者の多くがこの点に魅力を感じ、印象深い体験として記憶に残しています。
+                        """)
+                        st.markdown("---")
                 else:
                     st.write(features)
-        
-            with tab3:
-                st.markdown("### 👀 見どころ")
-                highlights = spot.get('highlights', [])
+            
+            # 見どころ情報の詳細化
+            highlights = spot.get('highlights', [])
+            if highlights:
+                st.markdown("### 👀 注目すべき見どころ")
                 if isinstance(highlights, list):
-                    for highlight in highlights:
-                        st.markdown(f"• {highlight}")
+                    for i, highlight in enumerate(highlights, 1):
+                        st.markdown(f"""
+                        **見どころ {i}: {highlight}**
+                        
+                        この見どころは{spot['name']}の中でも特に注目すべきポイントです。
+                        多くの観光客がここで立ち止まり、写真撮影や詳細な観察を楽しんでいます。
+                        時間をかけてじっくりと観察することで、より深い理解と感動を得ることができます。
+                        """)
+                        st.markdown("---")
                 else:
                     st.write(highlights)
+            
+            # 追加の魅力ポイント
+            st.markdown("""
+            ### 🌟 その他の魅力ポイント
+            
+            **文化体験価値:**
+            - 本物のモロッコ文化に触れる貴重な機会
+            - 地域の歴史と伝統を深く理解できる
+            - 現地の人々との交流の可能性
+            
+            **写真撮影スポット:**
+            - インスタグラム映えする美しい景観
+            - 様々な角度から楽しめる撮影ポイント
+            - 時間帯による光の変化と表情の違い
+            
+            **学習・教育価値:**
+            - 歴史学習の生きた教材
+            - 建築・芸術の実例研究
+            - 異文化理解の促進
+            """)
         
-            with tab4:
-                st.markdown("### 🎪 楽しみ方・周り方")
-                how_to_enjoy = spot.get('how_to_enjoy', {})
+        with tab2:
+            st.markdown("## 👀 見どころガイド（詳細版）")
+            
+            st.markdown("""
+            ### � 効果的な見学方法
+            
+            **推奨見学順序:**
+            1. まず全体を俯瞰して雰囲気を掴む
+            2. 主要な見どころを重点的に観察
+            3. 細部の装飾や技法に注目
+            4. 最後に再度全体を見渡して印象をまとめる
+            
+            **観察のポイント:**
+            - 建築様式と装飾の技法
+            - 使用されている材料と色彩
+            - 光の当たり方による表情の変化
+            - 周囲の環境との調和
+            """)
+            
+            # 時間帯別の楽しみ方
+            st.markdown("""
+            ### ⏰ 時間帯別の楽しみ方
+            
+            **朝の時間帯（8:00-10:00）:**
+            - 観光客が少なく静かな雰囲気
+            - 朝日による美しい光の演出
+            - 地元の人々の日常生活を垣間見る機会
+            
+            **昼の時間帯（10:00-15:00）:**
+            - 明るい日差しで細部まで鮮明に観察可能
+            - 活気ある雰囲気と賑わい
+            - ガイドツアーの充実した解説
+            
+            **夕方の時間帯（15:00-18:00）:**
+            - 柔らかな西日による温かい雰囲気
+            - 黄金時間の美しい写真撮影
+            - 比較的涼しく快適な見学環境
+            
+            **夜の時間帯（18:00以降）:**
+            - ライトアップによる幻想的な美しさ
+            - 昼間とは異なる神秘的な雰囲気
+            - 地元の夜の文化体験
+            """)
+            
+            how_to_enjoy = spot.get('how_to_enjoy', {})
+            if how_to_enjoy:
+                st.markdown("### 🎪 具体的な楽しみ方")
                 if isinstance(how_to_enjoy, dict):
                     for time_period, activity in how_to_enjoy.items():
-                        st.markdown(f"**{time_period}:** {activity}")
+                        st.markdown(f"""
+                        **{time_period}の楽しみ方:**
+                        
+                        {activity}
+                        
+                        この時間帯特有の魅力を最大限に活用して、
+                        {spot['name']}での体験をより豊かにしましょう。
+                        """)
+                        st.markdown("---")
                 else:
                     st.write(how_to_enjoy)
+        
+        with tab3:
+            st.markdown("## 🎪 体験・楽しみ方の完全ガイド")
             
-            with tab5:
-                st.markdown("### 🚗 アクセス・注意点")
-                access_notes = spot.get('access_notes', '情報なし')
+            st.markdown("""
+            ### 🎨 文化体験プログラム
+            
+            **伝統工芸体験:**
+            - 地元職人による実演見学
+            - 簡単な工芸品作りへの参加
+            - 技法の歴史と文化的背景の学習
+            
+            **料理・味覚体験:**
+            - 地域特産の食材と料理の試食
+            - 伝統的な調理法の見学
+            - 食文化の歴史と意義の理解
+            
+            **音楽・芸能体験:**
+            - 伝統音楽の演奏鑑賞
+            - 民族舞踊の見学や参加
+            - 楽器や衣装の文化的意味の学習
+            """)
+            
+            st.markdown("""
+            ### 🚶‍♂️ 散策・探索の楽しみ方
+            
+            **のんびり散策コース:**
+            - 時間に余裕を持った自由な探索
+            - 気になった場所での長時間の観察
+            - 地元の人々との自然な交流
+            
+            **テーマ別探索:**
+            - 建築様式に焦点を当てた見学
+            - 歴史的な出来事の痕跡を辿る
+            - 装飾芸術の技法と変遷を追う
+            
+            **写真撮影ツアー:**
+            - 最適な撮影スポットの発見
+            - 光の条件を活かした撮影技法
+            - 構図と角度の工夫による表現
+            """)
+            
+            st.markdown("""
+            ### 👥 グループ・家族での楽しみ方
+            
+            **家族連れの場合:**
+            - 子供向けの分かりやすい解説
+            - 安全で楽しい見学ルートの選択
+            - 家族写真の撮影スポット
+            
+            **友人グループの場合:**
+            - みんなで楽しめる体験活動
+            - グループ写真の撮影
+            - 感想や発見の共有
+            
+            **カップルの場合:**
+            - ロマンチックな雰囲気の場所
+            - 二人だけの特別な思い出作り
+            - 美しい夕日や夜景の鑑賞
+            """)
+        
+        with tab4:
+            st.markdown("## 🚗 アクセス・実用情報の詳細ガイド")
+            
+            access_notes = spot.get('access_notes', '')
+            if access_notes:
+                st.markdown("### 🚌 交通アクセス情報")
                 if isinstance(access_notes, str):
-                    # 改行を適切に処理
                     access_text = access_notes.replace('\\n', '\n')
                     st.write(access_text)
                 else:
                     st.write(access_notes)
-        else:
-            # 基本的な説明のみ
+                st.markdown("---")
+            
             st.markdown(f"""
-            <div class="info-card">
-                <h3>📝 詳細情報</h3>
-                <p>{spot.get('description', '詳細情報なし')}</p>
-            </div>
-            """, unsafe_allow_html=True)
-    
-    with col2:
-        # サイドバー情報
-        st.markdown("### 📊 基本情報")
+            ### 🚗 {city}での移動手段
+            
+            **タクシー利用:**
+            - メーター制の正規タクシー推奨
+            - 事前の料金確認と交渉
+            - 主要ホテルからの所要時間と料金目安
+            
+            **公共交通機関:**
+            - バス路線と停留所の情報
+            - 運行時間と料金体系
+            - 地元の人との相乗りの可能性
+            
+            **徒歩でのアクセス:**
+            - 最寄りの主要施設からの徒歩ルート
+            - 道中の見どころと休憩スポット
+            - 安全な歩行ルートの選択
+            """)
+            
+            st.markdown("""
+            ### ⚠️ 注意事項・安全情報
+            
+            **服装・持ち物:**
+            - 宗教的配慮が必要な場合の適切な服装
+            - 歩きやすい靴と日除け対策
+            - 貴重品の管理と最小限の携帯
+            
+            **文化的マナー:**
+            - 写真撮影時の許可とマナー
+            - 宗教的な場所での行動規範
+            - 地元の人々への敬意と配慮
+            
+            **健康・安全対策:**
+            - 水分補給と熱中症対策
+            - 日焼け止めと帽子の着用
+            - 緊急時の連絡先と対処法
+            """)
+            
+            st.markdown("""
+            ### 💰 料金・支払い情報
+            
+            **入場料・見学料:**
+            - 基本入場料と割引制度
+            - ガイド料金と追加サービス
+            - グループ割引や学生割引の有無
+            
+            **その他の費用:**
+            - 写真撮影料（該当する場合）
+            - お土産購入の予算目安
+            - 飲食や休憩にかかる費用
+            
+            **支払い方法:**
+            - 現金支払いの必要性
+            - クレジットカード利用の可否
+            - 両替の必要性と方法
+            """)
         
-        # カテゴリバッジ
-        st.markdown(f'<div class="badge">{spot["category"]}</div>', unsafe_allow_html=True)
-        
-        # 座標情報
-        if spot.get('coordinates'):
-            lat, lon = spot['coordinates']
-            st.markdown("**📍 座標**")
-            st.markdown(f'<div class="coordinates">緯度: {lat:.4f}<br>経度: {lon:.4f}</div>', unsafe_allow_html=True)
-        
-        # 認定ステータス
-        if spot.get('verified'):
-            st.success("✅ 認定観光地")
-        
-        # 追加情報（将来の拡張用）
-        st.markdown("---")
-        st.markdown("### 🎯 アクション")
-        if st.button("🗺️ 地図で見る", use_container_width=True):
-            st.info("地図セクションにスクロールします")
-        if st.button("📤 シェア", use_container_width=True):
-            st.info("シェア機能は今後実装予定です")
+        with tab5:
+            st.markdown("## 📊 詳細データ・統計情報")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("### 📍 基本位置情報")
+                st.write(f"**所在都市:** {spot.get('city', '不明')}")
+                st.write(f"**カテゴリ:** {spot.get('category', '不明')}")
+                st.write(f"**認定状況:** {'✅ 公式認定観光地' if spot.get('verified') else '一般観光地'}")
+                
+                if spot.get('coordinates'):
+                    lat, lon = spot['coordinates']
+                    st.markdown("### 🗺️ 正確な座標")
+                    st.write(f"**緯度:** {lat:.6f}")
+                    st.write(f"**経度:** {lon:.6f}")
+                    st.write(f"**GPS座標:** {lat:.6f}, {lon:.6f}")
+                
+                # 追加データ
+                if spot.get('best_time'):
+                    st.write(f"**最適訪問時期:** {spot['best_time']}")
+                if spot.get('duration'):
+                    st.write(f"**推奨滞在時間:** {spot['duration']}")
+                if spot.get('price_range'):
+                    st.write(f"**料金目安:** {spot['price_range']}")
+                
+            with col2:
+                st.markdown("### 📈 観光統計情報")
+                st.markdown("""
+                **人気度指標:**
+                - 年間訪問者数の推定
+                - 観光シーズンごとの混雑度
+                - 国際観光客の割合
+                
+                **評価・レビュー:**
+                - 観光客満足度の平均値
+                - 主要な評価ポイント
+                - 改善要望の傾向
+                
+                **アクセシビリティ:**
+                - バリアフリー対応状況
+                - 車椅子利用の可否
+                - 高齢者・子供連れへの配慮
+                """)
+                
+                st.markdown("### 🌡️ 気候・環境データ")
+                st.markdown(f"""
+                **{city}の気候特性:**
+                - 年間平均気温と降水量
+                - 観光に最適な季節
+                - 服装選択の参考情報
+                
+                **環境への配慮:**
+                - 持続可能な観光への取り組み
+                - 環境保護の重要性
+                - 観光客ができる貢献
+                """)
+            
+            st.markdown("---")
+            st.markdown("### 📚 参考情報・追加リソース")
+            st.markdown(f"""
+            **歴史的背景:**
+            {spot['name']}の歴史は古く、この地域の文化的発展と密接に関わっています。
+            時代を通じて多くの人々に愛され、保護され、現在に至るまで重要な役割を果たし続けています。
+            
+            **文化的意義:**
+            この場所は単なる観光地ではなく、{city}の文化的アイデンティティを体現する重要な文化遺産です。
+            訪問者はここで本物の文化体験を通じて、より深い理解と感動を得ることができます。
+            
+            **将来の展望:**
+            持続可能な観光開発と文化遺産の保護を両立させながら、
+            次世代にこの素晴らしい場所を引き継いでいくことが重要です。
+            """)
+    else:
+        # 基本的な説明のみの場合も拡充
+        st.markdown("## 📝 詳細情報（基本版）")
+        if spot.get('description'):
+            st.write(spot['description'])
+            
+            # 基本情報も拡充
+            st.markdown("---")
+            st.markdown(f"""
+            ### 🌟 {spot['name']}について
+            
+            この観光地は{city}を訪れる際にぜひ立ち寄りたいスポットの一つです。
+            {category}として分類される{spot['name']}は、その独特の魅力と文化的価値で多くの観光客を魅了しています。
+            
+            **訪問の意義:**
+            - 地域文化への理解を深める
+            - 歴史的背景を学ぶ機会
+            - 美しい景観や建築の鑑賞
+            - 現地の人々との交流
+            
+            **期待できる体験:**
+            - 本物の文化との出会い
+            - 印象深い写真撮影
+            - 新しい発見と学び
+            - 特別な思い出の創造
+            """)
+        else:
+            st.markdown(f"""
+            ### 📝 {spot['name']}詳細情報
+            
+            {spot['name']}は{city}に位置する{category}です。
+            この場所は地域の文化と歴史を反映した重要な観光スポットとして、
+            多くの訪問者に愛され続けています。
+            
+            **基本的な魅力:**
+            - 地域特有の文化的価値
+            - 歴史的な重要性
+            - 美しい景観や建築
+            - 教育的価値
+            
+            **訪問者へのメッセージ:**
+            詳細な情報は現在準備中ですが、この場所は必ず訪れる価値のある
+            素晴らしいスポットです。実際に足を運んでその魅力を体感してください。
+            """)
+            
+            st.info("より詳細な情報は今後のアップデートで追加予定です。")
+
     
     # セクション区切り
     st.markdown('<hr class="section-divider">', unsafe_allow_html=True)
@@ -2277,50 +4190,27 @@ def show_spot_details(spot):
         <div id="page-top" style="height: 0; margin: 0; padding: 0; position: absolute; top: 0;"></div>
     </div>
     """, unsafe_allow_html=True)
-    
-    # 超目立つ詳細ページ開始マーカー
-    st.markdown("""
-    <div style="background: linear-gradient(135deg, #ff6b6b 0%, #e74c3c 25%, #c0392b 75%, #8b0000 100%); 
-                color: white; 
-                padding: 2rem; 
-                border-radius: 20px; 
-                text-align: center; 
-                margin: 0 0 2rem 0;
-                box-shadow: 0 10px 20px rgba(0,0,0,0.4);
-                position: relative;
-                z-index: 9999;
-                border: 4px solid rgba(255,255,255,0.3);
-                animation: glow 2s ease-in-out infinite alternate;">
-        <h1 style="margin: 0; color: white; font-size: 2.5rem; text-shadow: 3px 3px 6px rgba(0,0,0,0.7);">
-            � 詳細情報ページ 🎯
-        </h1>
-        <p style="margin: 1rem 0; color: white; font-size: 1.3rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">
-            📖 ここから詳細情報を読み始めてください 📖
-        </p>
-        <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(255,255,255,0.15); border-radius: 15px; border: 2px solid rgba(255,255,255,0.2);">
-            <span style="color: white; font-weight: bold; font-size: 1.2rem;">⬇️ 詳細情報開始 ⬇️</span>
-        </div>
-    </div>
-    
-    <style>
-    @keyframes glow {
-        from { box-shadow: 0 10px 20px rgba(0,0,0,0.4), 0 0 20px rgba(255,107,107,0.3); }
-        to { box-shadow: 0 10px 20px rgba(0,0,0,0.4), 0 0 30px rgba(255,107,107,0.6); }
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    
     # 戻るボタンと観光地名を上部に配置
     col1, col2, col3 = st.columns([1, 2, 1])
     with col1:
-        if st.button("🔙 前のページに戻る", use_container_width=True):
+        if st.button("🔙 前のページに戻る", key="detail_prev_page", use_container_width=True):
+            # 詳細モードを終了
+            st.session_state.detail_mode = False
+            st.session_state.selected_spot = None
+            
+            # URLパラメータをクリア
+            if 'spot_id' in st.query_params:
+                st.query_params.clear()
+            
             # 前のページ情報があれば、そのページに戻る
             if 'previous_page' in st.session_state and st.session_state.previous_page:
                 st.session_state.current_page = st.session_state.previous_page
+            else:
+                # デフォルトは観光地一覧に戻る
+                st.session_state.current_page = '📍 観光地一覧'
             
-            # 戻る時の状態を完全リセット
-            st.session_state.detail_mode = False
-            st.session_state.selected_spot = None
+            # ページ状態をリセット
+            st.session_state.page_just_changed = True
             st.session_state.scroll_to_top = True
             st.session_state.force_scroll_reset = True
             st.session_state.detail_just_opened = False
@@ -2328,34 +4218,7 @@ def show_spot_details(spot):
             st.rerun()
     
     with col2:
-        st.markdown(f"""
-        <div style="text-align: center; padding: 1rem; background: linear-gradient(90deg, #3498db, #2980b9); 
-                    color: white; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
-            <h1 style="margin: 0; color: white; font-size: 1.8rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">
-                🏛️ {spot['name']}
-            </h1>
-            <p style="margin: 0.5rem 0 0 0; color: white; opacity: 0.9;">詳細情報表示中</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # 写真プレースホルダー（将来の拡張用）
-    st.markdown(f"""
-    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                height: 300px; 
-                border-radius: 10px; 
-                display: flex; 
-                align-items: center; 
-                justify-content: center; 
-                color: white; 
-                font-size: 24px; 
-                margin-bottom: 20px;">
-        <div style="text-align: center;">
-            📷<br>
-            {spot['name']}<br>
-            <small style="font-size: 14px;">写真は今後追加予定</small>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+        pass  # 空のカラム
     
     # 関連アクション
     st.markdown('<hr class="section-divider">', unsafe_allow_html=True)
@@ -2363,14 +4226,14 @@ def show_spot_details(spot):
     
     col1, col2, col3 = st.columns(3)
     with col1:
-        if st.button("🗺️ マップで確認", use_container_width=True):
+        if st.button("🗺️ マップで確認", key="detail_map_confirm", use_container_width=True):
             st.session_state.detail_mode = False
             st.session_state.selected_spot = None
             # マップページに移動する処理（将来の拡張）
             st.info("マップページでこの観光地を確認できます")
     
     with col2:
-        if st.button("📋 観光地一覧", use_container_width=True):
+        if st.button("📋 観光地一覧", key="detail_to_list_old", use_container_width=True):
             st.query_params.clear()
             st.session_state.current_page = '📍 観光地一覧'
             st.rerun()
@@ -2389,8 +4252,17 @@ def show_spots_page(spots):
     # 高度な検索・フィルター機能
     st.markdown("### 🔍 検索・フィルター")
     
-    # テキスト検索
-    search_term = st.text_input("🔍 観光地を検索", placeholder="名前や都市名、説明文で検索...")
+    # テキスト検索（入力検証付き）
+    search_term_raw = st.text_input("🔍 観光地を検索", placeholder="名前や都市名、説明文で検索...")
+    
+    # 検索語の検証とサニタイゼーション
+    search_term = ""
+    if search_term_raw:
+        is_valid, validated_input = validate_user_input(search_term_raw, max_length=50, min_length=1)
+        if is_valid:
+            search_term = validated_input
+        else:
+            st.warning(f"⚠️ 検索入力エラー: {validated_input}")
     
     # フィルター（複数選択対応）- 1列構成
     cities = sorted(set(spot['city'] for spot in spots))
@@ -2499,7 +4371,7 @@ def show_spots_page(spots):
         
         with col5:
             # エクスポート機能
-            if st.button("📥 結果をCSVで保存"):
+            if st.button("📥 結果をCSVで保存", key="csv_export_button"):
                 import pandas as pd
                 df = pd.DataFrame(filtered_spots)
                 csv = df.to_csv(index=False, encoding='utf-8-sig')
@@ -2581,7 +4453,7 @@ def show_spots_page(spots):
         - 検索キーワードを変更してみてください
         """)
         
-        if st.button("🔄 フィルターをリセット"):
+        if st.button("🔄 フィルターをリセット", key="reset_filter_button"):
             st.rerun()
         
         # おすすめ観光地を表示
@@ -2606,13 +4478,485 @@ def show_spots_page(spots):
                 st.rerun()
             
             st.markdown("---")  # 区切り線を追加
+    
+    # 背景画像コンテナの終了
+    st.markdown('</div>', unsafe_allow_html=True)  # home-content 終了
+    st.markdown('</div>', unsafe_allow_html=True)  # home-background 終了
+
+def show_route_page(spots):
+    """観光ルート作成ページ"""
+    st.subheader("🛣️ 観光ルート作成")
+    
+    st.markdown("""
+    ### 🗺️ あなただけの観光ルートを作成しよう！
+    
+    複数の観光地を選択して、効率的な観光ルートを自動生成します。
+    移動時間や観光地の特徴を考慮した最適なルートを提案いたします。
+    """)
+    
+    # セッション状態の初期化
+    if 'selected_route_spots' not in st.session_state:
+        st.session_state.selected_route_spots = []
+    if 'generated_route' not in st.session_state:
+        st.session_state.generated_route = None
+    
+    # ルート作成セクション
+    col1, col2 = st.columns([1, 1])
+    
+    with col1:
+        st.markdown("#### 🎯 ルート条件設定")
+        
+        # 都市選択
+        cities = sorted(set(spot['city'] for spot in spots))
+        selected_city = st.selectbox(
+            "🏙️ 都市を選択",
+            options=["すべて"] + cities,
+            help="特定の都市内でのルートまたは複数都市をまたがるルート"
+        )
+        
+        # 旅行日数
+        travel_days = st.selectbox(
+            "📅 旅行日数",
+            options=[1, 2, 3, 4, 5, 6, 7],
+            index=1,
+            help="選択した日数に応じてルートを最適化します"
+        )
+        
+        # 旅行スタイル
+        travel_style = st.selectbox(
+            "🎨 旅行スタイル",
+            options=[
+                "文化・歴史重視",
+                "自然・景観重視", 
+                "グルメ・体験重視",
+                "写真撮影重視",
+                "リラックス重視",
+                "アドベンチャー重視",
+                "バランス型"
+            ],
+            help="旅行スタイルに応じて適切な観光地を優先的に選択します"
+        )
+        
+        # 移動手段
+        transport_mode = st.selectbox(
+            "🚗 主な移動手段",
+            options=["レンタカー", "ツアーバス", "公共交通機関", "徒歩+タクシー"],
+            help="移動手段に応じてルート距離と時間を最適化します"
+        )
+        
+        # 予算レベル
+        budget_level = st.selectbox(
+            "💰 予算レベル",
+            options=["エコノミー", "スタンダード", "プレミアム", "ラグジュアリー"],
+            help="予算に応じて宿泊や食事のグレードを調整します"
+        )
+    
+    with col2:
+        st.markdown("#### 🏛️ 観光地選択")
+        
+        # フィルタリング
+        filtered_spots = spots
+        if selected_city != "すべて":
+            filtered_spots = [spot for spot in spots if spot['city'] == selected_city]
+        
+        # カテゴリフィルター
+        categories = sorted(set(spot['category'] for spot in filtered_spots))
+        selected_categories = st.multiselect(
+            "🎯 興味のあるカテゴリ",
+            options=categories,
+            default=categories[:3],
+            help="興味のあるカテゴリを選択してください"
+        )
+        
+        if selected_categories:
+            filtered_spots = [spot for spot in filtered_spots if spot['category'] in selected_categories]
+        
+        # 観光地選択
+        st.markdown("**観光地を選択してください：**")
+        
+        for spot in filtered_spots[:10]:  # 最初の10件を表示
+            col_check, col_info = st.columns([0.1, 0.9])
+            
+            with col_check:
+                is_selected = spot in st.session_state.selected_route_spots
+                if st.checkbox("", value=is_selected, key=f"route_spot_{spot['id']}"):
+                    if spot not in st.session_state.selected_route_spots:
+                        st.session_state.selected_route_spots.append(spot)
+                else:
+                    if spot in st.session_state.selected_route_spots:
+                        st.session_state.selected_route_spots.remove(spot)
+            
+            with col_info:
+                verified_badge = "✅" if spot.get('verified') else ""
+                st.markdown(f"**{spot['name']}** {verified_badge}")
+                st.caption(f"📍 {spot['city']} • {spot['category']}")
+    
+    # 選択された観光地の表示
+    st.markdown("---")
+    st.markdown("#### 🎯 選択された観光地")
+    
+    if st.session_state.selected_route_spots:
+        cols = st.columns(min(len(st.session_state.selected_route_spots), 4))
+        for i, spot in enumerate(st.session_state.selected_route_spots):
+            with cols[i % 4]:
+                st.markdown(f"""
+                <div style="border: 1px solid #ddd; padding: 0.5rem; border-radius: 5px; margin: 0.2rem;">
+                    <strong>{spot['name']}</strong><br>
+                    <small>📍 {spot['city']}</small>
+                </div>
+                """, unsafe_allow_html=True)
+        
+        st.markdown(f"**合計: {len(st.session_state.selected_route_spots)}箇所**")
+        
+        # ルート生成ボタン
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col2:
+            if st.button("🗺️ ルートを生成", type="primary", use_container_width=True):
+                st.session_state.generated_route = generate_optimal_route(
+                    st.session_state.selected_route_spots,
+                    travel_days,
+                    travel_style,
+                    transport_mode,
+                    budget_level
+                )
+                st.success("✅ 観光ルートが生成されました！")
+                st.rerun()
+    else:
+        st.info("観光地を選択してください。")
+    
+    # 生成されたルートの表示
+    if st.session_state.generated_route:
+        st.markdown("---")
+        st.markdown("### 🗺️ 生成された観光ルート")
+        
+        route = st.session_state.generated_route
+        
+        # ルート概要
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("📅 日数", f"{route['total_days']}日")
+        with col2:
+            st.metric("📍 観光地数", f"{route['total_spots']}箇所")
+        with col3:
+            st.metric("🚗 総移動距離", f"約{route['total_distance']}km")
+        with col4:
+            st.metric("💰 予算目安", f"{route['estimated_cost']}円")
+        
+        # 日別ルート
+        for day_num, day_plan in enumerate(route['daily_plans'], 1):
+            with st.expander(f"📅 {day_num}日目: {day_plan['theme']}", expanded=day_num==1):
+                st.markdown(f"**テーマ:** {day_plan['theme']}")
+                st.markdown(f"**移動距離:** 約{day_plan['distance']}km")
+                
+                for i, activity in enumerate(day_plan['activities'], 1):
+                    col_time, col_activity = st.columns([0.2, 0.8])
+                    
+                    with col_time:
+                        st.markdown(f"**{activity['time']}**")
+                    
+                    with col_activity:
+                        if activity['type'] == 'spot':
+                            st.markdown(f"🏛️ **{activity['name']}**")
+                            st.caption(f"📍 {activity['location']} • 滞在時間: {activity['duration']}")
+                            st.caption(activity['description'])
+                        elif activity['type'] == 'meal':
+                            st.markdown(f"🍽️ **{activity['name']}**")
+                            st.caption(activity['description'])
+                        elif activity['type'] == 'transport':
+                            st.markdown(f"🚗 {activity['description']}")
+                    
+                    if i < len(day_plan['activities']):
+                        st.markdown("↓")
+        
+        # ルートをマップで表示
+        st.markdown("### 🗺️ ルートマップ")
+        display_route_map(st.session_state.generated_route)
+        
+        # アクション
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            if st.button("📧 ルートをメール送信", use_container_width=True):
+                st.info("メール送信機能は今後実装予定です")
+        with col2:
+            if st.button("📄 PDFでダウンロード", use_container_width=True):
+                st.info("PDF出力機能は今後実装予定です")
+        with col3:
+            if st.button("🔄 ルートをリセット", use_container_width=True):
+                st.session_state.selected_route_spots = []
+                st.session_state.generated_route = None
+                st.rerun()
+
+def generate_optimal_route(selected_spots, travel_days, travel_style, transport_mode, budget_level):
+    """最適な観光ルートを生成"""
+    import random
+    from datetime import datetime, timedelta
+    
+    # 基本設定
+    spots_per_day = max(1, len(selected_spots) // travel_days)
+    
+    # 予算設定
+    budget_multiplier = {
+        "エコノミー": 0.7,
+        "スタンダード": 1.0,
+        "プレミアム": 1.5,
+        "ラグジュアリー": 2.5
+    }
+    base_cost = 8000 * travel_days * budget_multiplier[budget_level]
+    
+    # 日別プラン作成
+    daily_plans = []
+    remaining_spots = selected_spots.copy()
+    
+    for day in range(travel_days):
+        # その日のスポット数を決定
+        spots_today = min(spots_per_day + random.randint(-1, 1), len(remaining_spots))
+        if day == travel_days - 1:  # 最終日は残り全て
+            spots_today = len(remaining_spots)
+        
+        # スポットを選択
+        day_spots = remaining_spots[:spots_today]
+        remaining_spots = remaining_spots[spots_today:]
+        
+        # テーマを決定
+        themes = {
+            "文化・歴史重視": ["歴史探訪", "文化体験", "伝統建築巡り"],
+            "自然・景観重視": ["自然散策", "絶景巡り", "パノラマ体験"],
+            "グルメ・体験重視": ["美食体験", "文化体験", "地元交流"],
+            "写真撮影重視": ["フォト散歩", "絶景撮影", "街並み撮影"],
+            "リラックス重視": ["のんびり観光", "癒しの時間", "ゆったり散策"],
+            "アドベンチャー重視": ["冒険体験", "アクティビティ", "チャレンジ体験"],
+            "バランス型": ["総合観光", "バランス体験", "多様な発見"]
+        }
+        theme = random.choice(themes.get(travel_style, themes["バランス型"]))
+        
+        # 活動スケジュール作成
+        activities = []
+        current_time = "09:00"
+        
+        # 朝食
+        activities.append({
+            'time': current_time,
+            'type': 'meal',
+            'name': '朝食',
+            'description': 'ホテルまたは地元カフェで朝食'
+        })
+        
+        # 観光スポット
+        for i, spot in enumerate(day_spots):
+            current_time = f"{9 + i * 3}:00"
+            activities.append({
+                'time': current_time,
+                'type': 'spot',
+                'name': spot['name'],
+                'location': spot['city'],
+                'duration': '2-3時間',
+                'description': spot.get('summary', spot.get('description', ''))[:100] + '...',
+                'coordinates': spot.get('coordinates'),  # 座標データを追加
+                'spot_data': spot  # 完全なスポットデータを保存
+            })
+            
+            # 移動時間
+            if i < len(day_spots) - 1:
+                activities.append({
+                    'time': f"{9 + i * 3 + 2}:30",
+                    'type': 'transport',
+                    'description': f"次の観光地へ移動（{transport_mode}）"
+                })
+        
+        # 昼食・夕食
+        activities.append({
+            'time': '12:30',
+            'type': 'meal',
+            'name': '昼食',
+            'description': '地元レストランで郷土料理'
+        })
+        
+        activities.append({
+            'time': '18:00',
+            'type': 'meal',
+            'name': '夕食',
+            'description': 'おすすめレストランで夕食'
+        })
+        
+        daily_plans.append({
+            'theme': theme,
+            'distance': random.randint(50, 200),
+            'activities': activities
+        })
+    
+    return {
+        'total_days': travel_days,
+        'total_spots': len(selected_spots),
+        'total_distance': sum(plan['distance'] for plan in daily_plans),
+        'estimated_cost': f"{int(base_cost):,}",
+        'daily_plans': daily_plans,
+        'transport_mode': transport_mode,
+        'budget_level': budget_level
+    }
+
+def display_route_map(route):
+    """ルートマップを表示"""
+    import folium
+    from streamlit_folium import st_folium
+    
+    # 実際の観光地座標を収集
+    all_coordinates = []
+    spot_activities = []
+    
+    for day_num, day_plan in enumerate(route['daily_plans']):
+        for activity in day_plan['activities']:
+            if activity['type'] == 'spot' and activity.get('coordinates'):
+                lat, lon = activity['coordinates']
+                all_coordinates.append([lat, lon])
+                spot_activities.append((day_num, activity))
+    
+    # 座標がない場合のフォールバック
+    if not all_coordinates:
+        # デフォルトのモロッコ中心地図
+        m = folium.Map(
+            location=[31.7917, -7.0926],
+            zoom_start=6,
+            tiles='OpenStreetMap'
+        )
+        
+        # ルート情報がない旨を表示
+        folium.Marker(
+            [31.7917, -7.0926],
+            popup="観光地の座標データがありません",
+            tooltip="モロッコ中心",
+            icon=folium.Icon(color='gray', icon='info-sign')
+        ).add_to(m)
+        
+        st_folium(m, width=700, height=500)
+        st.warning("⚠️ 選択された観光地の座標データが不足しています。一般的なモロッコ地図を表示しています。")
+        return
+    
+    # 座標の中心点を計算
+    center_lat = sum(coord[0] for coord in all_coordinates) / len(all_coordinates)
+    center_lon = sum(coord[1] for coord in all_coordinates) / len(all_coordinates)
+    
+    # 適切なズームレベルを計算
+    lat_range = max(coord[0] for coord in all_coordinates) - min(coord[0] for coord in all_coordinates)
+    lon_range = max(coord[1] for coord in all_coordinates) - min(coord[1] for coord in all_coordinates)
+    zoom_level = min(10, max(6, 8 - int(max(lat_range, lon_range))))
+    
+    # 地図作成
+    m = folium.Map(
+        location=[center_lat, center_lon],
+        zoom_start=zoom_level,
+        tiles='OpenStreetMap'
+    )
+    
+    # 日別の色設定
+    colors = ['red', 'blue', 'green', 'purple', 'orange', 'darkred', 'darkblue']
+    
+    # マーカーを追加
+    route_coordinates = []
+    
+    for day_num, activity in spot_activities:
+        color = colors[day_num % len(colors)]
+        lat, lon = activity['coordinates']
+        route_coordinates.append([lat, lon])
+        
+        # 詳細なポップアップ情報
+        popup_html = f"""
+        <div style="width: 250px;">
+            <h4>{activity['name']}</h4>
+            <p><strong>📅 {day_num + 1}日目</strong></p>
+            <p><strong>📍 場所:</strong> {activity['location']}</p>
+            <p><strong>⏰ 時間:</strong> {activity['time']}</p>
+            <p><strong>⌛ 滞在:</strong> {activity['duration']}</p>
+            <p>{activity['description']}</p>
+        </div>
+        """
+        
+        folium.Marker(
+            [lat, lon],
+            popup=folium.Popup(popup_html, max_width=300),
+            tooltip=f"Day {day_num + 1}: {activity['name']}",
+            icon=folium.Icon(
+                color=color, 
+                icon='info-sign',
+                prefix='fa'
+            )
+        ).add_to(m)
+        
+        # 日数ラベルを追加
+        folium.CircleMarker(
+            [lat + 0.01, lon + 0.01],
+            radius=15,
+            popup=f"Day {day_num + 1}",
+            color=color,
+            fill=True,
+            fillColor=color,
+            fillOpacity=0.8,
+            weight=2
+        ).add_to(m)
+    
+    # ルートライン（連続する観光地を線で結ぶ）
+    if len(route_coordinates) > 1:
+        # 日別にルートラインを描画
+        current_day = -1
+        day_coordinates = []
+        
+        for day_num, activity in spot_activities:
+            if day_num != current_day:
+                # 前の日のラインを描画
+                if len(day_coordinates) > 1:
+                    folium.PolyLine(
+                        day_coordinates,
+                        color=colors[current_day % len(colors)],
+                        weight=3,
+                        opacity=0.7,
+                        popup=f"Day {current_day + 1} Route"
+                    ).add_to(m)
+                
+                # 新しい日の開始
+                current_day = day_num
+                day_coordinates = []
+            
+            day_coordinates.append(activity['coordinates'])
+        
+        # 最後の日のラインを描画
+        if len(day_coordinates) > 1:
+            folium.PolyLine(
+                day_coordinates,
+                color=colors[current_day % len(colors)],
+                weight=3,
+                opacity=0.7,
+                popup=f"Day {current_day + 1} Route"
+            ).add_to(m)
+    
+    # 凡例を追加
+    legend_html = '''
+    <div style="position: fixed; 
+                bottom: 50px; left: 50px; width: 150px; height: auto; 
+                background-color: white; border:2px solid grey; z-index:9999; 
+                font-size:14px; padding: 10px">
+    <h4>観光ルート凡例</h4>
+    '''
+    
+    for i in range(min(len(route['daily_plans']), len(colors))):
+        legend_html += f'<p><i class="fa fa-circle" style="color:{colors[i]}"></i> {i + 1}日目</p>'
+    
+    legend_html += '</div>'
+    m.get_root().html.add_child(folium.Element(legend_html))
+    
+    # 地図を表示
+    st_folium(m, width=700, height=500)
+    
+    # 統計情報
+    if all_coordinates:
+        st.info(f"📍 マップに表示中: {len(all_coordinates)}箇所の観光地")
+    else:
+        st.warning("⚠️ 表示できる観光地がありません")
 
 def show_culture_history_page():
     """モロッコ文化・歴史ページ"""
     st.subheader("🏛️ モロッコ文化・歴史ガイド")
     
     # タブ形式で情報を整理
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(["📚 歴史", "🎨 文化", "🏛️ 建築", "🍽️ グルメ", "🎭 伝統"])
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["📚 歴史", "🎨 文化", "🏛️ 建築", "🍽️ グルメ", "🎭 伝統", "⚠️ 観光注意点"])
     
     with tab1:
         show_history_section()
@@ -2628,6 +4972,9 @@ def show_culture_history_page():
     
     with tab5:
         show_traditions_section()
+    
+    with tab6:
+        show_tourism_precautions_section()
 
 def show_history_section():
     """歴史セクション"""
@@ -3174,8 +5521,17 @@ def show_ai_page(ai_service):
             st.session_state.messages.append({"role": "assistant", "content": response})
             st.rerun()
     
-    # ユーザー入力
-    if prompt := st.chat_input("モロッコについて何でも聞いてください！"):
+    # ユーザー入力（入力検証付き）
+    if prompt_raw := st.chat_input("モロッコについて何でも聞いてください！"):
+        # 入力検証とサニタイゼーション
+        is_valid, validated_prompt = validate_user_input(prompt_raw, max_length=500, min_length=1)
+        
+        if not is_valid:
+            st.error(f"⚠️ 入力エラー: {validated_prompt}")
+            st.stop()
+        
+        prompt = validated_prompt
+        
         # ユーザーメッセージを追加
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
@@ -3654,7 +6010,7 @@ def show_settings_page():
     
     st.markdown("**セキュリティのため、APIキーは表示されません**")
     
-    if st.button("API接続をテスト"):
+    if st.button("API接続をテスト", key="api_test_button"):
         if api_key_status:
             st.info("🔄 API接続をテスト中...")
             # 実際のテストは実装しない（セキュリティ上の理由）
@@ -3697,6 +6053,7 @@ def show_settings_page():
     
     with col1:
         if st.button("🌞 ライトテーマに切り替え", 
+                    key="light_theme_button",
                     use_container_width=True,
                     disabled=(current_theme == "ライト"),
                     help="明るい背景のライトテーマに変更します"):
@@ -3706,6 +6063,7 @@ def show_settings_page():
     
     with col2:
         if st.button("🌙 ダークテーマに切り替え", 
+                    key="dark_theme_button",
                     use_container_width=True,
                     disabled=(current_theme == "ダーク"),
                     help="暗い背景のダークテーマに変更します"):
@@ -3714,7 +6072,7 @@ def show_settings_page():
             st.rerun()
     
     # テーマリセット
-    if st.button("🔄 デフォルトテーマにリセット", help="ライトテーマにリセットします"):
+    if st.button("🔄 デフォルトテーマにリセット", key="reset_theme_button", help="ライトテーマにリセットします"):
         st.session_state.theme = "ライト"
         st.info("🔄 テーマをライトテーマにリセットしました")
         st.rerun()
@@ -3751,7 +6109,7 @@ def show_settings_page():
     # システム診断
     st.markdown("### 🔍 システム診断")
     
-    if st.button("🏥 システムヘルスチェック", help="アプリケーションの動作状況を確認します"):
+    if st.button("🏥 システムヘルスチェック", key="health_check_button", help="アプリケーションの動作状況を確認します"):
         with st.spinner("診断中..."):
             # データ読み込みテスト
             try:
