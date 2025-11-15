@@ -8,7 +8,6 @@ from flask import Flask, render_template, jsonify, request
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
-from datetime import datetime
 from my_app.services.ai_service import get_morocco_gpt
 
 # 環境変数を読み込み
@@ -387,7 +386,8 @@ def find_available_port(start_port=5000, max_tries=10):
             result = sock.connect_ex(('127.0.0.1', port))
             if result != 0:  # ポートが利用可能
                 return port
-        except:
+        except OSError:
+            # ソケット操作での一般的なエラーは無視して次のポートへ
             pass
         finally:
             sock.close()
@@ -403,11 +403,11 @@ if __name__ == '__main__':
     # 利用可能なポートを検索
     port = find_available_port()
     
-    print(f"🌟 モロッコ観光ガイドアプリを起動中...")
+    print("🌟 モロッコ観光ガイドアプリを起動中...")
     print(f"🌐 アクセス URL: http://localhost:{port}")
-    print(f"🐍 Python環境: 仮想環境 (.venv)")
-    print(f"📦 パッケージ: インストール完了")
-    print(f"⭐ 準備完了！")
+    print("🐍 Python環境: 仮想環境 (.venv)")
+    print("📦 パッケージ: インストール完了")
+    print("⭐ 準備完了！")
     
     app.run(
         host='127.0.0.1',

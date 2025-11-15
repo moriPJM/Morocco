@@ -4,7 +4,7 @@
 
 import os
 import socket
-from flask import Flask, render_template, jsonify, request, session
+from flask import Flask, render_template, jsonify, request
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
@@ -162,7 +162,7 @@ def ai_chat():
         }), 500
 
 # 観光地データ
-spots = [
+SPOTS_DATA = [
     # マラケシュの観光地（12箇所）
     {
         'id': 1,
@@ -497,17 +497,17 @@ def get_spots():
         verified_only = request.args.get('verified', 'false').lower() == 'true'
         
         # データをフィルタリング
-        filtered_spots = spots.copy()
-        
+        filtered_spots = SPOTS_DATA.copy()
+
         if city:
             filtered_spots = [spot for spot in filtered_spots if spot['city'] == city]
-        
+
         if category:
             filtered_spots = [spot for spot in filtered_spots if spot['category'] == category]
-        
+
         if verified_only:
             filtered_spots = [spot for spot in filtered_spots if spot.get('verified', False)]
-        
+
         return jsonify({
             'success': True,
             'data': filtered_spots,
@@ -518,7 +518,7 @@ def get_spots():
                 'verified_only': verified_only
             }
         })
-        
+
     except Exception as e:
         return jsonify({
             'success': False,
@@ -585,7 +585,7 @@ def get_spot_detail(spot_id):
             return jsonify(spot_details[spot_id])
         else:
             # 基本データから動的に詳細を生成
-            basic_spot = next((spot for spot in spots if spot['id'] == spot_id), None)
+            basic_spot = next((spot for spot in SPOTS_DATA if spot['id'] == spot_id), None)
             if basic_spot:
                 # より詳細な情報を自動生成
                 detailed_spot = {
@@ -628,8 +628,8 @@ def get_spot_detail(spot_id):
                     'error': 'SPOT_NOT_FOUND',
                     'error_code': 404,
                     'message': '観光地が見つかりません',
-                    'details': f'観光地ID {spot_id} は存在しません。有効なIDは1-{len(spots)}です。',
-                    'available_spots': len(spots),
+                    'details': f'観光地ID {spot_id} は存在しません。有効なIDは1-{len(SPOTS_DATA)}です。',
+                    'available_spots': len(SPOTS_DATA),
                     'suggestion': '観光地一覧(/api/spots)から有効なIDを確認してください。'
                 }), 404
 
@@ -650,14 +650,14 @@ def get_recommended_spots():
     """おすすめ観光地を取得するAPIエンドポイント"""
     try:
         # 検証済みの観光地から上位を選択
-        recommended = [spot for spot in spots if spot.get('verified', False)][:6]
-        
+        recommended = [spot for spot in SPOTS_DATA if spot.get('verified', False)][:6]
+
         return jsonify({
             'success': True,
             'data': recommended,
             'total': len(recommended)
         })
-        
+
     except Exception as e:
         return jsonify({
             'success': False,
@@ -670,15 +670,15 @@ def get_cities():
     """都市一覧を取得するAPIエンドポイント"""
     try:
         # すべての都市を重複なしで取得
-        cities = list(set(spot['city'] for spot in spots))
+        cities = list(set(spot['city'] for spot in SPOTS_DATA))
         cities.sort()  # アルファベット順にソート
-        
+
         return jsonify({
             'success': True,
             'data': cities,
             'total': len(cities)
         })
-        
+
     except Exception as e:
         return jsonify({
             'success': False,
@@ -691,15 +691,15 @@ def get_categories():
     """カテゴリ一覧を取得するAPIエンドポイント"""
     try:
         # すべてのカテゴリを重複なしで取得
-        categories = list(set(spot['category'] for spot in spots))
+        categories = list(set(spot['category'] for spot in SPOTS_DATA))
         categories.sort()  # アルファベット順にソート
-        
+
         return jsonify({
             'success': True,
             'data': categories,
             'total': len(categories)
         })
-        
+
     except Exception as e:
         return jsonify({
             'success': False,
@@ -749,8 +749,8 @@ if __name__ == '__main__':
     port = find_port()
     print(f"\n🚀 Morocco Tourism App starting on port {port}")
     print(f"📍 Local access: http://localhost:{port}")
-    print(f"🤖 AI powered by OpenAI GPT-4o-mini")
-    print(f"🏛️ Total tourist spots: {len(spots)}")
+    print("🤖 AI powered by OpenAI GPT-4o-mini")
+    print(f"🏛️ Total tourist spots: {len(SPOTS_DATA)}")
     print("=" * 50)
     
     try:

@@ -4,22 +4,197 @@ Morocco Tourism Guide App powered by Streamlit
 """
 
 import streamlit as st
-import pandas as pd
 import folium
 from streamlit_folium import st_folium
 import json
 import os
 import traceback
 import time
-import random
 from functools import wraps
 import logging
-from datetime import datetime
-from typing import Dict, List, Optional
+import re
+from typing import List, Optional
+
+# Optional vector search module (lazy - may fail if deps not installed)
+try:
+    from ai_vector_search import VectorStore, build_docs_from_kb, _HAS_SBT as _AI_VECTOR_HAS_SBT
+except Exception:
+    VectorStore = None
+    build_docs_from_kb = None
+    _AI_VECTOR_HAS_SBT = False
+
+# Optional OpenAI client import (only used when API key is configured)
+try:
+    _openai_client = None
+    # Try new-style client
+    try:
+        from openai import OpenAI  # type: ignore
+        _openai_client = ('new', OpenAI)
+    except Exception:
+        # Fall back to legacy API
+        import openai  # type: ignore
+        _openai_client = ('legacy', openai)
+except Exception:
+    _openai_client = None
+
+def call_openai_api(prompt_text: str) -> Optional[str]:
+    """Call OpenAI chat completion API with robust fallbacks.
+
+    Returns response text or None if failed.
+    """
+    api_key = os.getenv('OPENAI_API_KEY')
+    if not api_key or _openai_client is None:
+        return None
+
+    try:
+        mode, client_or_module = _openai_client
+        # Prefer lightweight models if available
+        preferred_models = [
+            'gpt-4o-mini',
+            'gpt-4o',
+            'gpt-4-turbo',
+            'gpt-3.5-turbo'
+        ]
+
+        if mode == 'new':
+            # New client usage
+            ClientClass = client_or_module
+            client = ClientClass(api_key=api_key)
+            model = preferred_models[0]
+            try:
+                resp = client.chat.completions.create(
+                    model=model,
+                    messages=[
+                        {"role": "system", "content": "You are a helpful assistant for Morocco travel."},
+                        {"role": "user", "content": prompt_text}
+                    ],
+                    temperature=0.4,
+                    max_tokens=800
+                )
+            except Exception:
+                # Try a fallback model
+                model = preferred_models[-1]
+                resp = client.chat.completions.create(
+                    model=model,
+                    messages=[
+                        {"role": "system", "content": "You are a helpful assistant for Morocco travel."},
+                        {"role": "user", "content": prompt_text}
+                    ],
+                    temperature=0.4,
+                    max_tokens=800
+                )
+            content = resp.choices[0].message.content if resp and resp.choices else None
+            return content
+        else:
+            # Legacy openai module
+            openai = client_or_module
+            openai.api_key = api_key
+            model = preferred_models[-1]
+            try:
+                completion = openai.ChatCompletion.create(
+                    model=model,
+                    messages=[
+                        {"role": "system", "content": "You are a helpful assistant for Morocco travel."},
+                        {"role": "user", "content": prompt_text}
+                    ],
+                    temperature=0.4,
+                    max_tokens=800
+                )
+                return completion.choices[0].message["content"]
+            except Exception as e:
+                logger.warning(f"OpenAI legacy call failed: {e}")
+                return None
+    except Exception as e:
+        logger.error(f"OpenAI API error: {e}")
+        return None
+
+# Load .env if present so OPENAI_API_KEY and other env vars are available during local runs
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except Exception:
+    # dotenv is optional; if not available, environment vars must be set externally
+    pass
 
 # ログ設定
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+def summarize_snippets(snippet_blocks: List[str], max_chars: int = 1200) -> str:
+    """要約器: OpenAI が利用可能なら要約を依頼し、なければ軽量な抽出的要約にフォールバックする。
+
+    Args:
+        snippet_blocks: 各スニペット文字列のリスト（ヘッダ行を含む）
+        max_chars: 返す要約の最大文字数（概算）
+
+    Returns:
+        生成されたコンパクトな要約文字列（必要なら短い参照一覧を末尾に追加）
+    """
+    try:
+        if not snippet_blocks:
+            return ""
+
+        # コンパクトな入力を作る（各スニペットは先頭行のソースヘッダだけを残す）
+        headers = []
+        bodies = []
+        for b in snippet_blocks:
+            lines = [ln for ln in b.splitlines() if ln.strip()]
+            if not lines:
+                continue
+            header = lines[0]
+            body = " ".join(lines[1:])[:800]
+            headers.append(header)
+            bodies.append(body)
+
+        compact_input = "\n\n".join([f"{h}\n{bod}" for h, bod in zip(headers, bodies)])
+
+        # Try using OpenAI for a concise summary if available
+        api_key = os.getenv('OPENAI_API_KEY')
+        if api_key and _openai_client is not None:
+            sum_prompt = (
+                "次の参照コンテキストの要点を日本語で簡潔に要約してください。"
+                " 各参照の要点は1-2文にまとめ、行頭に該当する出典を [SOURCE:...] として示してください。"
+                f" 要約全体はおおむね{max_chars}文字以内に収めてください。\n\n{compact_input}"
+            )
+            try:
+                resp = call_openai_api(sum_prompt)
+                if resp:
+                    # Append compact source list to help citation lookup
+                    src_list = "\n\n参照元一覧:\n" + "\n".join(headers[:10])
+                    out = resp.strip()
+                    # Ensure length limit
+                    if len(out) > max_chars:
+                        out = out[:max_chars].rstrip() + "..."
+                    return out + src_list
+            except Exception as e:
+                logger.info(f"OpenAI summarization failed, falling back: {e}")
+
+        # Fallback: simple extractive summarization
+        #  各スニペットから最初の1-2文を取り、全体を繋げて切り詰める
+        sentences = []
+        for body in bodies:
+            # split Japanese/English sentences conservatively
+            sents = re.split(r'(?<=[。！？!?])\s*', body)
+            for s in sents:
+                ts = s.strip()
+                if ts:
+                    sentences.append(ts)
+                    break
+        # If nothing found, fall back to first N chars of compact_input
+        if not sentences:
+            short = compact_input[:max_chars]
+            src_list = "\n\n参照元一覧:\n" + "\n".join(headers[:10])
+            return short + (src_list if headers else "")
+
+        combined = "。 ".join(sentences)
+        if len(combined) > max_chars:
+            combined = combined[:max_chars].rstrip() + "..."
+        src_list = "\n\n参照元一覧:\n" + "\n".join(headers[:10])
+        return combined + src_list
+    except Exception as e:
+        logger.error(f"summarize_snippets error: {e}")
+        return ""
 
 # ユーザー入力検証関数
 def validate_user_input(input_text, max_length=100, min_length=1):
@@ -127,8 +302,20 @@ def get_background_image_css():
     """背景画像のCSSを取得（エラーハンドリング強化版）"""
     import base64
     
-    # 背景画像ファイルのパス
-    bg_image_path = r"c:\Users\user\Pictures\grjebasj2c5fmtqrxoh1.jpg"
+    # 背景画像ファイルのパス（優先順に検索）
+    alternative_paths = [
+        r"c:\Users\user\Pictures\morocco_bg.jpg",
+        r"c:\Users\user\Pictures\grjebasj2c5fmtqrxoh1.jpg",
+    ]
+    bg_image_path = None
+    for p in alternative_paths:
+        if os.path.exists(p):
+            bg_image_path = p
+            logger.info(f"Using background image path: {p}")
+            break
+    if not bg_image_path:
+        # 明示的にFileNotFoundErrorを投げしてフォールバックCSSへ制御を渡す
+        raise FileNotFoundError("No background image found in configured paths")
     
     try:
         # ファイル安全性チェック
@@ -149,7 +336,7 @@ def get_background_image_css():
         
         logger.info(f"Background image loaded successfully: {len(img_data)} chars")
         
-        return f"""
+        css_template = """
         <style>
             /* Majorelle Blue + Gold Color Palette */
             :root {{
@@ -178,12 +365,15 @@ def get_background_image_css():
                         rgba(0, 0, 0, 0.3) 100%
                     ), 
                     url(data:image/jpeg;base64,{img_data});
-                background-size: cover;
-                background-position: center center;
-                background-attachment: fixed;
-                background-repeat: no-repeat;
+                background-size: cover !important;
+                background-position: center center !important;
+                background-attachment: fixed !important;
+                background-repeat: no-repeat !important;
+                image-rendering: auto;
+                min-height: 100vh;
                 position: relative;
-            }}
+                z-index: 0;
+            }
             
             .stApp::before {{
                 content: "";
@@ -258,27 +448,15 @@ def get_background_image_css():
                 padding-top: 0 !important;
             }}
             
-            .home-background {{
-                background: transparent;
+            .home-background {
+                min-height: 0vh;
                 padding: 0;
                 margin: 0;
-            }}
+            }
             
-            .home-content {{
-                background: rgba(255, 255, 255, 0.35);
-                padding: 20px 24px 24px 24px;
-                border-radius: 20px;
-                backdrop-filter: blur(32px) saturate(250%);
-                box-shadow: 
-                    0 16px 48px rgba(0, 0, 0, 0.2),
-                    0 8px 24px rgba(0, 0, 0, 0.15),
-                    inset 0 2px 0 rgba(255, 255, 255, 0.7),
-                    inset 0 -2px 0 rgba(0, 0, 0, 0.1);
-                border: 1px solid rgba(255, 255, 255, 0.5);
-                margin: 0;
-                position: relative;
-                z-index: 2;
-            }}
+            /* .home-content 削除済み */
+            
+
             
             /* Section Background Hierarchy */
             .section-background-primary {{
@@ -1101,6 +1279,12 @@ def get_background_image_css():
             }}
         </style>
         """
+        
+        # Use simple replace to avoid Python str.format parsing of CSS braces
+        css_filled = css_template.replace("{{", "{").replace("}}", "}")
+        css_filled = css_filled.replace("{img_data}", img_data)
+        return css_filled
+        
     except FileNotFoundError:
         logger.warning("Background image not found, using fallback background")
         return """
@@ -1130,6 +1314,7 @@ def get_background_image_css():
                     #2D1B69 100%);
                 background-size: 400% 400%;
                 animation: gradientShift 15s ease infinite;
+                min-height: 100vh;
                 position: relative;
             }
             
@@ -1159,6 +1344,7 @@ def get_background_image_css():
             
             .home-background {
                 background: transparent;
+                min-height: 0vh;
                 padding: 0;
                 margin: 0;
                 position: relative;
@@ -2719,12 +2905,17 @@ def init_ai_service():
         'available': bool(api_key),
         'api_key_masked': '****' if api_key else None,
         'knowledge_base': get_ai_knowledge_base(),
-        'fallback_responses': get_enhanced_fallback_responses()
+        'fallback_responses': get_enhanced_fallback_responses(),
+        # Vector search availability (sentence-transformers + sklearn must be installed)
+        'vector_search_available': bool(_AI_VECTOR_HAS_SBT),
+        # whether a KB vector store has been built in this session (may be created on demand)
+        'vector_store_built': bool(st.session_state.get('kb_vector_store_built', False))
     }
 
 def get_ai_knowledge_base():
     """AI用の詳細知識ベース"""
-    return {
+    # Built-in base
+    base = {
         'country_info': {
             'name': 'モロッコ王国',
             'capital': 'ラバト',
@@ -2767,6 +2958,50 @@ def get_ai_knowledge_base():
             }
         }
     }
+
+    # Attempt to load external JSON knowledge files from data/ai_knowledge
+    kb_dir = os.path.join(os.path.dirname(__file__), 'data', 'ai_knowledge')
+    if os.path.isdir(kb_dir):
+        try:
+            for fname in os.listdir(kb_dir):
+                if not fname.lower().endswith('.json'):
+                    continue
+                path = os.path.join(kb_dir, fname)
+                try:
+                    with open(path, 'r', encoding='utf-8') as f:
+                        extra = json.load(f)
+                    # Merge extra into base (shallow/deep merge for dicts and extend lists)
+                    for k, v in extra.items():
+                        if k not in base:
+                            base[k] = v
+                        else:
+                            # both exist
+                            if isinstance(base[k], dict) and isinstance(v, dict):
+                                # merge nested dict
+                                for subk, subv in v.items():
+                                    if subk not in base[k]:
+                                        base[k][subk] = subv
+                                    else:
+                                        # extend lists or overwrite scalars
+                                        if isinstance(base[k][subk], list) and isinstance(subv, list):
+                                            # append unique items
+                                            for it in subv:
+                                                if it not in base[k][subk]:
+                                                    base[k][subk].append(it)
+                                        else:
+                                            base[k][subk] = subv
+                            elif isinstance(base[k], list) and isinstance(v, list):
+                                for it in v:
+                                    if it not in base[k]:
+                                        base[k].append(it)
+                            else:
+                                base[k] = v
+                except Exception as e:
+                    logger.warning(f"Failed to load AI knowledge file {path}: {e}")
+        except Exception as e:
+            logger.warning(f"Failed to scan ai_knowledge directory: {e}")
+
+    return base
 
 def get_enhanced_fallback_responses():
     """拡張されたフォールバック応答"""
@@ -3265,7 +3500,7 @@ def show_home_page(spots):
     
     # 背景画像コンテナの開始
     st.markdown('<div class="home-background">', unsafe_allow_html=True)
-    st.markdown('<div class="home-content">', unsafe_allow_html=True)
+    # home-content div削除
     
     # ヘッダーセクション
     st.markdown("""
@@ -3466,7 +3701,7 @@ def show_home_page(spots):
         """, unsafe_allow_html=True)
     
     # 背景画像コンテナの終了
-    st.markdown('</div>', unsafe_allow_html=True)  # home-content
+    # home-content div削除
     st.markdown('</div>', unsafe_allow_html=True)  # home-background
 
 def show_map_page(spots):
@@ -3589,12 +3824,12 @@ def show_map_page(spots):
             ).add_to(m)
         
         # マップ表示
-        map_data = st_folium(m, width=700, height=500)
+        st_folium(m, width=700, height=500)
         
         # 観光地リスト
         st.subheader(f"📍 観光地一覧 ({len(filtered_spots)}件)")
         
-        for spot in filtered_spots:
+    for spot in filtered_spots:
             with st.expander(f"{spot['name']} - {spot['city']}"):
                 st.write(spot.get('summary') or spot.get('description', '詳細情報なし'))
                 st.write(f"**カテゴリ:** {spot['category']}")
@@ -3602,7 +3837,7 @@ def show_map_page(spots):
                     st.success("✅ 認定済み")
                 
                 # 詳細ボタン
-                if st.button(f"📖 詳細", key=f"list_detail_{spot['id']}", use_container_width=True):
+                if st.button("📖 詳細", key=f"list_detail_{spot['id']}", use_container_width=True):
                     st.query_params['spot_id'] = spot['id']
                     st.rerun()
     else:
@@ -4440,7 +4675,7 @@ def show_spots_page(spots):
             
             # 詳細ボタン
             detail_key = f"detail_{spot['id']}"
-            if st.button(f"📖 詳細を見る", key=detail_key, use_container_width=True):
+            if st.button("📖 詳細を見る", key=detail_key, use_container_width=True):
                 st.query_params['spot_id'] = spot['id']
                 st.rerun()
             
@@ -4485,14 +4720,14 @@ def show_spots_page(spots):
             """, unsafe_allow_html=True)
             
             # 詳細ボタン
-            if st.button(f"📖 詳細を見る", key=f"home_detail_{spot['id']}", use_container_width=True):
+            if st.button("📖 詳細を見る", key=f"home_detail_{spot['id']}", use_container_width=True):
                 st.query_params['spot_id'] = spot['id']
                 st.rerun()
             
             st.markdown("---")  # 区切り線を追加
     
     # 背景画像コンテナの終了
-    st.markdown('</div>', unsafe_allow_html=True)  # home-content 終了
+    # home-content div削除
     st.markdown('</div>', unsafe_allow_html=True)  # home-background 終了
 
 def show_route_page(spots):
@@ -4727,116 +4962,152 @@ def show_route_page(spots):
 
 def generate_optimal_route(selected_spots, travel_days, travel_style, transport_mode, budget_level):
     """最適な観光ルートを生成"""
-    import random
-    from datetime import datetime, timedelta
-    
-    # 基本設定
-    spots_per_day = max(1, min(4, len(selected_spots) // travel_days))  # 1日最大4箇所に制限
-    
-    # 予算設定
-    budget_multiplier = {
-        "エコノミー": 0.7,
-        "スタンダード": 1.0,
-        "プレミアム": 1.5,
-        "ラグジュアリー": 2.5
-    }
-    base_cost = 8000 * travel_days * budget_multiplier[budget_level]
-    
-    # 日別プラン作成
+    import math
+
+    def haversine(a, b):
+        # a, b: (lat, lon)
+        R = 6371.0
+        lat1, lon1 = math.radians(a[0]), math.radians(a[1])
+        lat2, lon2 = math.radians(b[0]), math.radians(b[1])
+        dlat = lat2 - lat1
+        dlon = lon2 - lon1
+        hav = math.sin(dlat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
+        return 2 * R * math.asin(math.sqrt(hav))
+
+    # Collect coordinates; for spots missing coordinates, keep None
+    coords = [ (spot.get('lat'), spot.get('lng')) if ('lat' in spot and 'lng' in spot) else None for spot in selected_spots ]
+
+    # If few or missing coordinates, fall back to naive split
+    if all(c is None for c in coords) or len(selected_spots) <= 2:
+        # Simple even split and keep original order
+        spots_per_day = max(1, min(4, len(selected_spots) // travel_days))
+        daily_plans = []
+        remaining = selected_spots.copy()
+        for day in range(travel_days):
+            take = min(spots_per_day, len(remaining)) if day < travel_days - 1 else len(remaining)
+            day_spots = remaining[:take]
+            remaining = remaining[take:]
+            activities = []
+            activities.append({'time':'09:00','type':'meal','name':'朝食','description':'ホテルで朝食'})
+            for i, spot in enumerate(day_spots):
+                activities.append({'time':f'{9+i*2}:00','type':'spot','name':spot['name'],'location':spot['city'],'duration':spot.get('duration','1時間'),'description':spot.get('summary','')[:100]+'...','coordinates': [spot.get('lat'), spot.get('lng')], 'spot_data': spot})
+                if i < len(day_spots)-1:
+                    activities.append({'time':f'{9+i*2+1}:30','type':'transport','description':f'移動（{transport_mode}）'})
+            activities.append({'time':'12:30','type':'meal','name':'昼食','description':'昼食'})
+            activities.append({'time':'18:00','type':'meal','name':'夕食','description':'夕食'})
+            daily_plans.append({'theme': travel_style, 'distance': 0, 'activities': activities})
+
+        total_distance = sum(p['distance'] for p in daily_plans)
+        budget_multiplier = {"エコノミー":0.7,"スタンダード":1.0,"プレミアム":1.5,"ラグジュアリー":2.5}
+        base_cost = 8000 * travel_days * budget_multiplier.get(budget_level,1.0)
+        return {'total_days': travel_days,'total_spots': len(selected_spots),'total_distance': int(total_distance),'estimated_cost': f"{int(base_cost):,}",'daily_plans': daily_plans,'transport_mode': transport_mode,'budget_level': budget_level}
+
+    # Build distance matrix
+    n = len(selected_spots)
+    dist = [[0.0]*n for _ in range(n)]
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            if coords[i] is None or coords[j] is None:
+                dist[i][j] = 1e6
+            else:
+                dist[i][j] = haversine(coords[i], coords[j])
+
+    # Nearest neighbour TSP
+    def nearest_neighbor_order(start=0):
+        visited = [False]*n
+        order = [start]
+        visited[start]=True
+        for _ in range(n-1):
+            last = order[-1]
+            # find nearest unvisited
+            best, bestd = -1, float('inf')
+            for j in range(n):
+                if not visited[j] and dist[last][j] < bestd:
+                    best, bestd = j, dist[last][j]
+            if best==-1:
+                break
+            order.append(best)
+            visited[best]=True
+        return order
+
+    # 2-opt improvement
+    def two_opt(order):
+        improved = True
+        best_order = order[:]
+        def tour_length(o):
+            s = 0.0
+            for i in range(len(o) - 1):
+                s += dist[o[i]][o[i+1]]
+            return s
+        best_len = tour_length(best_order)
+        while improved:
+            improved = False
+            for i in range(1, n-2):
+                for j in range(i+1, n-1):
+                    new_order = best_order[:i] + best_order[i:j+1][::-1] + best_order[j+1:]
+                    new_len = tour_length(new_order)
+                    if new_len + 1e-6 < best_len:
+                        best_order = new_order
+                        best_len = new_len
+                        improved = True
+            # exit if no improvement
+        return best_order
+
+    # Try nearest neighbour starting from multiple seeds and keep best
+    best_route = None
+    best_len = float('inf')
+    for s in range(min(n, 5)):  # try up to 5 different starts
+        order = nearest_neighbor_order(start=s)
+        order = two_opt(order)
+        # compute length
+        L = sum(dist[order[i]][order[i+1]] for i in range(len(order)-1))
+        if L < best_len:
+            best_len = L
+            best_route = order
+
+    # Reorder spots according to best_route
+    ordered_spots = [selected_spots[i] for i in best_route]
+    ordered_coords = [coords[i] for i in best_route]
+
+    # Split into days (contiguous chunks) trying to balance total intra-day distance
+    avg_per_day = max(1, math.ceil(len(ordered_spots) / travel_days))
     daily_plans = []
-    remaining_spots = selected_spots.copy()
-    
+    idx = 0
+    total_distance = 0.0
     for day in range(travel_days):
-        # その日のスポット数を決定
-        spots_today = min(spots_per_day + random.randint(-1, 1), len(remaining_spots))
-        if day == travel_days - 1:  # 最終日は残り全て
-            spots_today = len(remaining_spots)
-        
-        # スポットを選択
-        day_spots = remaining_spots[:spots_today]
-        remaining_spots = remaining_spots[spots_today:]
-        
-        # テーマを決定
-        themes = {
-            "文化・歴史重視": ["歴史探訪", "文化体験", "伝統建築巡り"],
-            "自然・景観重視": ["自然散策", "絶景巡り", "パノラマ体験"],
-            "グルメ・体験重視": ["美食体験", "文化体験", "地元交流"],
-            "写真撮影重視": ["フォト散歩", "絶景撮影", "街並み撮影"],
-            "リラックス重視": ["のんびり観光", "癒しの時間", "ゆったり散策"],
-            "アドベンチャー重視": ["冒険体験", "アクティビティ", "チャレンジ体験"],
-            "バランス型": ["総合観光", "バランス体験", "多様な発見"]
-        }
-        theme = random.choice(themes.get(travel_style, themes["バランス型"]))
-        
-        # 活動スケジュール作成
+        # last day gets the remainder
+        if day == travel_days - 1:
+            chunk = ordered_spots[idx:]
+            chunk_coords = ordered_coords[idx:]
+        else:
+            chunk = ordered_spots[idx: idx+avg_per_day]
+            chunk_coords = ordered_coords[idx: idx+avg_per_day]
+        idx += len(chunk)
+
         activities = []
-        current_time = "09:00"
-        
-        # 朝食
-        activities.append({
-            'time': current_time,
-            'type': 'meal',
-            'name': '朝食',
-            'description': 'ホテルまたは地元カフェで朝食'
-        })
-        
-        # 観光スポット
-        for i, spot in enumerate(day_spots):
-            current_time = f"{9 + i * 3}:00"
-            # 座標データを正しく取得
-            coordinates = None
-            if 'lat' in spot and 'lng' in spot:
-                coordinates = [spot['lat'], spot['lng']]
-            
-            activities.append({
-                'time': current_time,
-                'type': 'spot',
-                'name': spot['name'],
-                'location': spot['city'],
-                'duration': '2-3時間',
-                'description': spot.get('summary', spot.get('description', ''))[:100] + '...',
-                'coordinates': coordinates,  # 修正された座標データ
-                'spot_data': spot  # 完全なスポットデータを保存
-            })
-            
-            # 移動時間
-            if i < len(day_spots) - 1:
-                activities.append({
-                    'time': f"{9 + i * 3 + 2}:30",
-                    'type': 'transport',
-                    'description': f"次の観光地へ移動（{transport_mode}）"
-                })
-        
-        # 昼食・夕食
-        activities.append({
-            'time': '12:30',
-            'type': 'meal',
-            'name': '昼食',
-            'description': '地元レストランで郷土料理'
-        })
-        
-        activities.append({
-            'time': '18:00',
-            'type': 'meal',
-            'name': '夕食',
-            'description': 'おすすめレストランで夕食'
-        })
-        
-        daily_plans.append({
-            'theme': theme,
-            'distance': random.randint(50, 200),
-            'activities': activities
-        })
-    
-    return {
-        'total_days': travel_days,
-        'total_spots': len(selected_spots),
-        'total_distance': sum(plan['distance'] for plan in daily_plans),
-        'estimated_cost': f"{int(base_cost):,}",
-        'daily_plans': daily_plans,
-        'transport_mode': transport_mode,
-        'budget_level': budget_level
-    }
+        activities.append({'time':'09:00','type':'meal','name':'朝食','description':'ホテルで朝食'})
+        day_dist = 0.0
+        for i, spot in enumerate(chunk):
+            activities.append({'time':f'{9+i*2}:00','type':'spot','name':spot['name'],'location':spot['city'],'duration':spot.get('duration','1時間'),'description':spot.get('summary','')[:120]+'...','coordinates':[spot.get('lat'), spot.get('lng')],'spot_data': spot})
+            if i < len(chunk)-1:
+                activities.append({'time':f'{9+i*2+1}:30','type':'transport','description':f'移動（{transport_mode}）'})
+                # add distance between successive
+                a = chunk_coords[i]
+                b = chunk_coords[i+1]
+                if a and b:
+                    d = haversine(a,b)
+                    day_dist += d
+        activities.append({'time':'12:30','type':'meal','name':'昼食','description':'昼食'})
+        activities.append({'time':'18:00','type':'meal','name':'夕食','description':'夕食'})
+        daily_plans.append({'theme': travel_style, 'distance': int(day_dist), 'activities': activities})
+        total_distance += day_dist
+
+    budget_multiplier = {"エコノミー":0.7,"スタンダード":1.0,"プレミアム":1.5,"ラグジュアリー":2.5}
+    base_cost = 8000 * travel_days * budget_multiplier.get(budget_level,1.0)
+
+    return {'total_days': travel_days,'total_spots': len(selected_spots),'total_distance': int(total_distance),'estimated_cost': f"{int(base_cost):,}",'daily_plans': daily_plans,'transport_mode': transport_mode,'budget_level': budget_level}
 
 def display_route_map(route):
     """ルートマップを表示"""
@@ -5538,6 +5809,149 @@ def show_ai_page(ai_service):
             st.info("🔑 OpenAI: 設定済み")
         else:
             st.warning("🔑 OpenAI: 未設定")
+
+    # ベクトル検索が利用可能で、まだインデックス未構築なら自動構築（初回のみ）
+    if ai_service.get('vector_search_available') and not st.session_state.get('kb_vector_store_built'):
+        if not st.session_state.get('kb_vector_store_auto_built'):
+            try:
+                kb = ai_service['knowledge_base']
+                docs = build_docs_from_kb(kb) if build_docs_from_kb else []
+                if docs and VectorStore:
+                    with st.spinner("🔧 ベクトルインデックスを自動構築しています..."):
+                        vs = VectorStore()
+                        vs.build(docs)
+                        st.session_state['kb_vector_store'] = vs
+                        st.session_state['kb_vector_store_built'] = True
+                        st.session_state['kb_vector_store_auto_built'] = True
+                    st.success(f"✅ ベクトルインデックスを自動構築しました（{len(docs)}件）")
+            except Exception as e:
+                logger.warning(f"Auto-build of vector index failed: {e}")
+
+    # ベクトル検索（RAG）機能の有無とインデックス構築UI
+    if ai_service.get('vector_search_available'):
+        st.markdown("### 🔎 ベクトル検索（RAG） — 質問に強い検索")
+        st.success("🔎 この機能は、あなたの質問に関連する参考情報を自動で探し、AIの回答をより正確にするために使います。モデルや環境によって利用できない場合があります。")
+
+        # RAG パラメータ（UIから調整可能）
+        col_a, col_b = st.columns([1, 1])
+        with col_a:
+            st.slider("参考に使う上位文の数（Top K）", min_value=1, max_value=12, value=6, key="rag_top_k")
+            st.caption("小さい値はより絞った参照、大きい値はより多くの資料を参考にします（検索の幅が変わります）。")
+        with col_b:
+            st.number_input("要約の最大文字数", min_value=200, max_value=5000, value=1000, step=100, key="summary_max_chars")
+            st.caption("検索で見つかった本文を要約してAIに渡します。値を小さくすると短い要約になります。")
+
+        # 出典メタから人が読める出典名を取り出す小ヘルパー（いろんな形式に対応）
+        def _get_source_from_meta(meta: dict) -> str:
+            try:
+                if not meta:
+                    return '不明な出典'
+                # 優先キー一覧
+                for key in ('source', 'title', 'name', 'doc_id', 'id', 'file', 'url', 'source_name', 'source_title'):
+                    v = meta.get(key)
+                    if v:
+                        # 非空の文字列を返す
+                        return str(v)
+                # city/type 情報があれば、それを使う
+                if 'city' in meta:
+                    return f"{meta.get('city')}（地名）"
+                if 'type' in meta:
+                    return str(meta.get('type'))
+                # 最後の手段でメタの一部を JSON 化して返す（短縮）
+                try:
+                    import json as _json
+                    dump = _json.dumps(meta, ensure_ascii=False)
+                    return dump[:120]
+                except Exception:
+                    return '不明な出典'
+            except Exception:
+                return '不明な出典'
+
+        # 初心者向けの簡単な説明と例（折りたたみ）
+        with st.expander('この機能の使い方（初心者向け・簡単な例）', expanded=False):
+            st.markdown(
+                '- ステップ1: 上の入力欄に質問を入れます（例: 「モロッコ料理の特徴は？」）。\n'
+                '- ステップ2: ベクトル検索は質問の意味に合う参考文章を探します（Top Kで何件参考にするか選べます）。\n'
+                '- ステップ3: 見つかった参考文章は自動で要約され、AIの回答作成に使われます。\n\n'
+                '簡単なフロー（テキスト図）:\n'
+                '質問 → (ベクトル検索で候補を取得) → (候補を要約) → AIが要約＋知識で回答\n\n'
+                '**例**: 質問「モロッコ料理の特徴は？」 → 検索で「スパイス」「タジン」「ミントティー」などを含む文を発見 → 要約してAIが要点を返す。'
+            )
+
+        # 初回インデックス構築ボタン
+        if not st.session_state.get('kb_vector_store_built'):
+            if st.button("🔧 KB インデックスを構築 (初回のみ)", key="build_kb_index"):
+                try:
+                    kb = ai_service['knowledge_base']
+                    docs = build_docs_from_kb(kb)
+                    # compute KB fingerprint for persistence
+                    import hashlib
+                    kb_bytes = json.dumps(kb, ensure_ascii=False).encode('utf-8')
+                    fingerprint = hashlib.sha256(kb_bytes).hexdigest()[:12]
+                    storage_dir = os.path.join(os.path.dirname(__file__), 'data', 'ai_vector_index')
+                    os.makedirs(storage_dir, exist_ok=True)
+                    base_path = os.path.join(storage_dir, f'kb_index_{fingerprint}')
+
+                    # try loading persisted index
+                    try:
+                        vs = VectorStore.load(base_path)
+                        st.session_state['kb_vector_store'] = vs
+                        st.session_state['kb_vector_store_built'] = True
+                        st.success(f"✅ 永続化インデックスを読み込みました（{len(vs._ids)}件）")
+                    except Exception:
+                        vs = VectorStore()
+                        with st.spinner("インデックスを構築しています... この処理は数秒かかる場合があります"):
+                            vs.build(docs)
+                        # persist
+                        try:
+                            vs.save(base_path)
+                        except Exception:
+                            logger.warning('Failed to persist vector index, continuing in-memory')
+                        st.session_state['kb_vector_store'] = vs
+                        st.session_state['kb_vector_store_built'] = True
+                        st.success(f"✅ ベクトルインデックスを構築しました（ドキュメント数: {len(docs)}）")
+                except Exception as e:
+                    st.error(f"インデックス構築に失敗しました: {e}")
+        else:
+            st.info("✅ 参考データ（インデックス）はこのセッションで準備済みです。すぐに検索できます。")
+
+            # 単純なテスト検索UI（初心者向け表示）
+            test_q = st.text_input("🔎 試しに質問を入力してみましょう（例: モロッコ料理の特徴）", key="rag_test_query")
+            if st.button("検索", key="rag_test_search"):
+                if not test_q:
+                    st.warning("検索する質問を入力してください（空欄は不可です）")
+                else:
+                    vs = st.session_state.get('kb_vector_store')
+                    if not vs:
+                        st.error("インデックスが見つかりません。左のボタンでインデックスを作成してください。")
+                    else:
+                        try:
+                            top_k = st.session_state.get('rag_top_k', 5)
+                            results = vs.query(test_q, top_k=top_k)
+                            if not results:
+                                st.info("該当する参考情報が見つかりませんでした。別の言い回しで試してください。")
+                            else:
+                                st.markdown(f"**検索結果（上位{min(len(results), top_k)}件） — AIが参照する候補**")
+                                for r in results:
+                                    meta = r.get('meta', {}) or {}
+                                    rid = r.get('id')
+                                    score = r.get('score', 0.0)
+                                    text = (r.get('text') or "").strip()
+                                    # 短い抜粋を表示
+                                    excerpt = text.replace('\n', ' ')[:260]
+                                    source = _get_source_from_meta(meta)
+                                    # URLがあればリンク化
+                                    url = meta.get('url') or meta.get('link') or meta.get('file')
+                                    if url:
+                                        st.markdown(f"- **出典**: [{source}]({url})  \n  id: `{rid}` • 類似度: {score*100:.1f}%  ")
+                                    else:
+                                        st.markdown(f"- **出典**: {source}  \n  id: `{rid}` • 類似度: {score*100:.1f}%  ")
+                                    if excerpt:
+                                        st.markdown(f"  > {excerpt}...")
+                        except Exception as e:
+                            st.error(f"検索中にエラーが発生しました: {e}")
+    else:
+        st.info("🔎 ベクトル検索は未構成です。必要なパッケージ(sentence-transformers, scikit-learn)をrequirements.txtに追加済みか確認してください。")
     
     # チャット履歴の初期化
     if "messages" not in st.session_state:
@@ -5593,18 +6007,97 @@ def get_ai_response(prompt, ai_service):
     """AI応答を生成（高精度フォールバック対応）"""
     if ai_service['available']:
         try:
+            kb = ai_service['knowledge_base']
+            retrieved_context = None
+            
+            # summarize_snippets was promoted to module-level for reuse
+
+            # helper: highlight query terms (simple token match)
+            def _highlight_query(text: str, query: str) -> str:
+                try:
+                    tokens = set([t for t in re.split(r"\W+", query) if len(t) >= 2])
+                    if not tokens:
+                        return text
+                    # sort by length desc to avoid nested replacements
+                    toks = sorted(tokens, key=lambda x: -len(x))
+                    for t in toks:
+                        try:
+                            pattern = re.compile(re.escape(t), flags=re.IGNORECASE)
+                            text = pattern.sub(lambda m: f"**{m.group(0)}**", text)
+                        except re.error:
+                            continue
+                    return text
+                except Exception:
+                    return text
+
+            # RAG: ベクトル検索が有効なら、インデックスを用いて上位文書を取得
+            if ai_service.get('vector_search_available') and VectorStore and build_docs_from_kb:
+                try:
+                    # 既に構築済みなら再利用。なければオンデマンドで構築
+                    vs = st.session_state.get('kb_vector_store')
+                    if not vs:
+                        docs = build_docs_from_kb(kb)
+                        vs = VectorStore()
+                        vs.build(docs)
+                        st.session_state['kb_vector_store'] = vs
+                        st.session_state['kb_vector_store_built'] = True
+                    # 検索
+                    results = vs.query(prompt, top_k=st.session_state.get('rag_top_k', 6))
+                    # Build structured snippets with source tags and highlighted matches
+                    snippets = []
+                    for r in results:
+                        text = (r.get('text') or '').strip()
+                        if not text:
+                            continue
+                        rid = r.get('id')
+                        score = r.get('score', 0.0)
+                        meta = r.get('meta', {})
+                        tag = meta.get('city') or meta.get('type') or 'doc'
+                        # truncate preserving start & end context if too long
+                        max_len = 600
+                        if len(text) > max_len:
+                            snippet = text[:400].rstrip() + ' ... ' + text[-150:].lstrip()
+                        else:
+                            snippet = text
+                        # highlight query tokens
+                        highlighted = _highlight_query(snippet, prompt)
+                        header = f"[SOURCE:{rid}|{tag}|score={score:.2f}]"
+                        snippets.append(f"{header}\n{highlighted}")
+                    if snippets:
+                        # separate snippet blocks for clarity
+                        raw_joined = '\n\n'.join(snippets[:12])
+                        # 要約してトークン削減（OpenAI が使えればそちらで要約を行い、なければ抽出的要約）
+                        try:
+                            summarized = summarize_snippets(snippets[:8], max_chars=st.session_state.get('summary_max_chars', 1000))
+                            if summarized:
+                                # Use summarized context (short) in prompt
+                                retrieved_context = summarized
+                            else:
+                                retrieved_context = raw_joined[:3000]
+                        except Exception as e:
+                            logger.warning(f"Snippet summarization failed, using raw snippets: {e}")
+                            retrieved_context = raw_joined[:3000]
+                except Exception as e:
+                    logger.warning(f"RAG retrieval failed, continue without RAG: {e}")
+
             # 実際のOpenAI APIを使用する場合の高精度プロンプト
-            enhanced_prompt = create_enhanced_prompt(prompt, ai_service['knowledge_base'])
-            # return call_openai_api(enhanced_prompt)
-            pass
+            enhanced_prompt = create_enhanced_prompt(prompt, kb, retrieved_context)
+            ai_text = call_openai_api(enhanced_prompt)
+            if ai_text:
+                return ai_text
+            else:
+                raise RuntimeError("Empty OpenAI response")
         except Exception as e:
             st.error(f"API呼び出しエラー: {str(e)}")
     
     # 高精度フォールバック応答
     return generate_smart_fallback_response(prompt, ai_service)
 
-def create_enhanced_prompt(user_prompt, knowledge_base):
-    """OpenAI API用の強化されたプロンプトを作成"""
+def create_enhanced_prompt(user_prompt, knowledge_base, retrieved_context: Optional[str] = None):
+    """OpenAI API用の強化されたプロンプトを作成
+
+    retrieved_context: ベクトル検索で取得した追加コンテキスト文字列（任意）
+    """
     system_prompt = f"""あなたはモロッコ観光の専門ガイドです。以下の知識ベースに基づいて、正確で詳細な情報を提供してください。
 
 【モロッコ基本情報】
@@ -5637,7 +6130,18 @@ def create_enhanced_prompt(user_prompt, knowledge_base):
 
 日本語で、親しみやすく、かつ専門的な情報を提供してください。"""
     
-    return f"{system_prompt}\n\n【ユーザーの質問】\n{user_prompt}"
+    # 取得コンテキストがあれば追加
+    context_block = ""
+    if retrieved_context:
+        # Add explicit instruction about citations and use of the retrieved context
+        citation_instructions = (
+            "\n\n※以下の参照コンテキストを必ず参照して回答してください。"
+            " 参照可能な情報を用いる場合は、該当する出典を本文中に [SOURCE:<id>] の形式で明記してください。"
+            " 参照コンテキストに裏付けがない場合はその旨を伝え、不確かな情報は推測しないでください。"
+        )
+        context_block = f"\n\n【参照コンテキスト（検索結果）】\n{retrieved_context}{citation_instructions}"
+
+    return f"{system_prompt}{context_block}\n\n【ユーザーの質問】\n{user_prompt}"
 
 def generate_smart_fallback_response(prompt, ai_service):
     """スマートフォールバック応答生成"""
@@ -5911,39 +6415,29 @@ def generate_weather_response(keywords, knowledge_base):
 
 def generate_language_response(keywords, knowledge_base):
     """言語関連の応答生成"""
-    languages = knowledge_base['country_info']['languages']
-    etiquette = knowledge_base['travel_tips']['cultural_etiquette']
+    languages = knowledge_base['country_info'].get('languages', [])
+    etiquette = knowledge_base['travel_tips'].get('cultural_etiquette', {})
+    langs = ', '.join(languages)
+    greet = etiquette.get('greetings', 'こんにちは（挨拶）')
     return f"""🗣️ **モロッコの言語事情**
 
-**�️ 公用語**
-• **アラビア語**: 行政、教育、宗教で使用
-• **タマジグト語（ベルベル語）**: 2011年に公用語化
+**📌 主な言語:** {langs}
 
-**🌍 その他の主要言語**
-• **フランス語**: ビジネス、高等教育で広く使用
-• **スペイン語**: 北部地域（旧スペイン領）
-• **英語**: 観光業、国際ビジネスで増加傾向
+**🌍 概要**
+• **アラビア語**: 行政、教育、宗教で主に使用
+• **タマジグト（ベルベル語）**: 2011年に公用語化され、地方で広く話される
+• **フランス語**: ビジネス・教育・都市部で広く通用
+• **英語**: 観光業や若い世代で増加傾向
 
-**👋 基本的な挨拶**
-• **アラビア語**:
-  - こんにちは: アッサラーム・アライクム
-  - ありがとう: シュクラン
-  - はい/いいえ: ナアム / ラー
-
-• **フランス語**:
-  - こんにちは: Bonjour（ボンジュール）
-  - ありがとう: Merci（メルシー）
-  - すみません: Excusez-moi（エクスキューゼ・モワ）
-
-• **ベルベル語（タマジグト）**:
-  - こんにちは: アズール
-  - ありがとう: タヌミルト
+**👋 基本的な挨拶例**
+• アラビア語: アッサラーム・アライクム（挨拶）
+• フランス語: Bonjour（ボンジュール）
+• ベルベル語: アズール
 
 **💡 旅行者向けアドバイス**
-• 観光地では英語・フランス語が通じる
-• タクシーや市場では価格交渉が必要
-• 宗教的挨拶（アッサラーム・アライクム）は親しみやすさを示す
-• ジェスチャーや笑顔でコミュニケーション可能
+• 観光地ではフランス語・英語が通じることが多い
+• 地方ではベルベル語の影響が強い
+• {greet} といった基本挨拶を使うと親しみが伝わる
 
 **📱 便利なアプリ**
 • Google翻訳（オフライン対応）
@@ -6034,22 +6528,27 @@ def show_settings_page():
     st.markdown("### 🔧 アプリケーション設定")
     
     # 言語設定
-    language = st.selectbox("🌐 言語 / Language", ["日本語", "English"], index=0, 
-                           help="アプリケーションの表示言語を選択してください（現在は日本語のみ対応）")
+    st.selectbox("🌐 言語 / Language", ["日本語", "English"], index=0, key="app_language",
+                 help="アプリケーションの表示言語を選択してください（現在は日本語のみ対応）")
     
     # API設定
     st.markdown("### 🔑 API設定")
     
-    # 環境変数からAPIキーの存在を確認
-    api_key_status = bool(os.getenv('OPENAI_API_KEY'))
-    
+    # 環境変数またはセッションに保存された一時キーからAPIキーの存在を確認
+    api_key_env = os.getenv('OPENAI_API_KEY')
+    api_key_session = st.session_state.get('OPENAI_API_KEY')
+    api_key_status = bool(api_key_env or api_key_session)
+
     if api_key_status:
         st.success("✅ OpenAI APIキーが設定されています")
-        st.info("💡 APIキーは環境変数 `OPENAI_API_KEY` から読み込まれます")
+        if api_key_env:
+            st.info("💡 APIキーは環境変数 `OPENAI_API_KEY` から読み込まれます")
+        if api_key_session and not api_key_env:
+            st.info("💡 セッション内の一時APIキーが使用されています (ページ再読み込みで失われます)")
         st.markdown("**🎯 利用可能機能:** OpenAI GPT + 詳細知識ベース + スマート分析")
     else:
         st.warning("⚠️ OpenAI APIキーが設定されていません")
-        st.info("💡 AI機能を使用するには、環境変数 `OPENAI_API_KEY` を設定してください")
+        st.info("💡 AI機能を使用するには、環境変数 `OPENAI_API_KEY` を設定するか、下の一時キー入力でテストできます（開発用）")
         st.markdown("**🤖 現在の機能:** 高精度フォールバック応答システム（知識ベース内蔵）")
     
     st.markdown("**セキュリティのため、APIキーは表示されません**")
@@ -6061,6 +6560,33 @@ def show_settings_page():
             st.success("✅ APIキーが設定されています（接続テストは実装されていません）")
         else:
             st.error("❌ APIキーが設定されていません")
+
+    # --- 開発者向け: セッション限定でAPIキーを一時設定できるフォーム ---
+    st.markdown("### 🧪 開発用: 一時 API キー (セッション限定)")
+    st.caption("※ セキュリティに注意してください。入力されたキーはページ/セッション終了で消えます。運用環境では環境変数を使用してください。")
+
+    temp_input = st.text_input("一時 API キーを入力 (開発用)", type="password", key="temp_openai_input")
+    col_a, col_b = st.columns(2)
+    with col_a:
+        if st.button("セッションに保存", key="save_temp_api_key"):
+            if not temp_input:
+                st.error("❗ キーが入力されていません")
+            else:
+                st.session_state['OPENAI_API_KEY'] = temp_input
+                os.environ['OPENAI_API_KEY'] = temp_input
+                st.success("🔐 APIキーをセッションに保存しました（プロセス環境変数も設定されます）")
+                st.experimental_rerun()
+    with col_b:
+        if st.button("セッションのキーをクリア", key="clear_temp_api_key"):
+            if 'OPENAI_API_KEY' in st.session_state:
+                del st.session_state['OPENAI_API_KEY']
+            if 'OPENAI_API_KEY' in os.environ:
+                try:
+                    del os.environ['OPENAI_API_KEY']
+                except Exception:
+                    pass
+            st.success("🗑️ セッションのAPIキーをクリアしました")
+            st.experimental_rerun()
     
     # セキュリティ情報
     st.markdown("### 🔒 セキュリティ情報")
@@ -6167,9 +6693,6 @@ def show_settings_page():
             
             # 必須ライブラリテスト
             try:
-                import streamlit as st_test
-                import folium as folium_test
-                import pandas as pd_test
                 st.success("✅ 必須ライブラリ正常")
             except Exception as e:
                 st.error(f"❌ ライブラリエラー: {str(e)}")

@@ -3,7 +3,6 @@
 """
 
 import os
-import json
 from typing import Dict, List, Optional
 from dotenv import load_dotenv
 
@@ -65,7 +64,8 @@ class MoroccoTourismGPT:
                 
                 print("Testing OpenAI connection...")
                 try:
-                    test_response = self.client.chat.completions.create(
+                    # テスト呼び出し（結果は使用しない）
+                    self.client.chat.completions.create(
                         model="gpt-3.5-turbo",
                         messages=[{"role": "user", "content": "Hello"}],
                         max_tokens=5,
