@@ -6111,13 +6111,20 @@ def show_ai_page(ai_service):
         with st.chat_message("user"):
             st.markdown(prompt)
         
-        # AI応答を生成
+        # AI応答を生成（ストリーミング表示）
         with st.chat_message("assistant"):
-            response = get_ai_response(prompt, ai_service)
-            st.markdown(response)
+            response_placeholder = st.empty()
+            full_response = ""
+            
+            # ストリーミング応答を取得
+            for chunk in get_ai_response_stream(prompt, ai_service):
+                full_response += chunk
+                response_placeholder.markdown(full_response + "▌")
+            
+            response_placeholder.markdown(full_response)
         
         # アシスタントメッセージを追加
-        st.session_state.messages.append({"role": "assistant", "content": response})
+        st.session_state.messages.append({"role": "assistant", "content": full_response})
 
 def get_ai_response(prompt, ai_service):
     """AI応答を生成（高精度フォールバック対応・高速化版）"""
@@ -6132,8 +6139,8 @@ def get_ai_response(prompt, ai_service):
                     # init_ai_service で事前構築済みのベクトルストアを取得
                     vs = st.session_state.get('kb_vector_store')
                     if vs:
-                        # 検索（精度優先: top_kを8に増やして複数候補をAIに提供）
-                        top_k = st.session_state.get('rag_top_k', 8)  # 4→8に増加（期間マッチング改善）
+                        # 検索（速度と精度のバランス: top_kを5に最適化）
+                        top_k = st.session_state.get('rag_top_k', 5)  # 8→5に削減（速度向上）
                         results = vs.query(prompt, top_k=top_k)
                     
                         # RAG検索結果を構造化して整形（AIが活用しやすい形式）
@@ -6158,23 +6165,23 @@ def get_ai_response(prompt, ai_service):
                                 if duration_match:
                                     duration_info = f" [{duration_match.group(1)}]"
                             
-                            # より長い文章を許可（詳細な情報提供のため）
-                            max_len = 800  # 400→800に増加
+                            # スニペット長を最適化（速度重視）
+                            max_len = 600  # 800→600に削減（速度向上）
                             if len(text) > max_len:
                                 snippet = text[:max_len].rstrip() + '...'
                             else:
                                 snippet = text
                             
-                            # 構造化されたヘッダー（AIが情報源を理解しやすい）
-                            header = f"\n【検索結果 {idx}】類似度: {score:.1%} | 情報源: {tag}{duration_info}"
+                            # 簡潔なヘッダー（処理速度向上）
+                            header = f"\n[{idx}] {tag}{duration_info} ({score:.0%})"
                             snippets.append(f"{header}\n{snippet}\n")
                         
                         if snippets:
-                            # 構造化されたコンテキストを作成
+                            # コンテキストを作成
                             retrieved_context = '\n---\n'.join(snippets)
-                            # 最大トークン制限を拡大（詳細な情報提供のため）
-                            if len(retrieved_context) > 4000:  # 2000→4000に拡大
-                                retrieved_context = retrieved_context[:4000] + '...'
+                            # 最大トークン制限を最適化（速度重視）
+                            if len(retrieved_context) > 3000:  # 4000→3000に削減（速度向上）
+                                retrieved_context = retrieved_context[:3000] + '...'
                     else:
                         logger.info("Vector store not available in session")
                 except Exception as e:
@@ -6200,6 +6207,86 @@ def get_ai_response(prompt, ai_service):
     # 高精度フォールバック応答
     logger.info("Using fallback response")
     return generate_smart_fallback_response(prompt, ai_service)
+
+def get_ai_response_stream(prompt, ai_service):
+    """AI応答をストリーミング生成（リアルタイム表示）"""
+    if ai_service['available']:
+        try:
+            kb = ai_service['knowledge_base']
+            retrieved_context = None
+            
+            # RAG: ベクトル検索（高速化版）
+            if ai_service.get('vector_search_available') and VectorStore and build_docs_from_kb:
+                try:
+                    vs = st.session_state.get('kb_vector_store')
+                    if vs:
+                        top_k = st.session_state.get('rag_top_k', 5)
+                        results = vs.query(prompt, top_k=top_k)
+                        
+                        snippets = []
+                        for idx, r in enumerate(results[:top_k], 1):
+                            text = (r.get('text') or '').strip()
+                            if not text:
+                                continue
+                            score = r.get('score', 0.0)
+                            meta = r.get('meta', {})
+                            doc_id = r.get('id', 'unknown')
+                            tag = meta.get('city') or meta.get('type') or 'doc'
+                            
+                            duration_info = ""
+                            if 'itinerary' in str(doc_id):
+                                import re
+                                duration_match = re.search(r'期間:\s*([^\n]+)', text)
+                                if duration_match:
+                                    duration_info = f" [{duration_match.group(1)}]"
+                            
+                            max_len = 600
+                            snippet = text[:max_len].rstrip() + '...' if len(text) > max_len else text
+                            header = f"\n[{idx}] {tag}{duration_info} ({score:.0%})"
+                            snippets.append(f"{header}\n{snippet}\n")
+                        
+                        if snippets:
+                            retrieved_context = '\n---\n'.join(snippets)
+                            if len(retrieved_context) > 3000:
+                                retrieved_context = retrieved_context[:3000] + '...'
+                except Exception as e:
+                    logger.warning(f"RAG retrieval failed: {e}")
+
+            # プロンプト作成
+            enhanced_prompt = create_enhanced_prompt(prompt, kb, retrieved_context)
+            
+            # OpenAI APIでストリーミング生成
+            api_key = os.getenv('OPENAI_API_KEY')
+            if api_key and _openai_client:
+                try:
+                    mode, client_or_module = _openai_client
+                    if mode == 'new':
+                        ClientClass = client_or_module
+                        client = ClientClass(api_key=api_key)
+                        
+                        stream = client.chat.completions.create(
+                            model='gpt-4o-mini',
+                            messages=[
+                                {"role": "system", "content": "You are a helpful assistant for Morocco travel."},
+                                {"role": "user", "content": enhanced_prompt}
+                            ],
+                            temperature=0.5,
+                            max_tokens=1200,
+                            stream=True  # ストリーミング有効化
+                        )
+                        
+                        for chunk in stream:
+                            if chunk.choices[0].delta.content:
+                                yield chunk.choices[0].delta.content
+                        return
+                except Exception as e:
+                    logger.warning(f"Streaming failed, falling back: {e}")
+        except Exception as e:
+            logger.error(f"Stream generation failed: {e}")
+    
+    # フォールバック: 通常の応答を一度に返す
+    response = get_ai_response(prompt, ai_service)
+    yield response
 
 def create_enhanced_prompt(user_prompt, knowledge_base, retrieved_context: Optional[str] = None):
     """OpenAI API用の強化されたプロンプトを作成
@@ -6243,41 +6330,21 @@ def create_enhanced_prompt(user_prompt, knowledge_base, retrieved_context: Optio
 ---
 """
 
-    # 最終的なプロンプト構成
+    # 最終的なプロンプト構成（簡潔化で速度向上）
     final_prompt = f"""{system_prompt}{context_block}
 
-【回答スタイルと重要な指示】
+【重要な指示】
+- 期間指定（2泊3日など）がある場合は完全一致する旅程を最優先
+- 旅程提案時: 日次スケジュール、観光スポット、移動手段、食事、予算、Tipsを含める
+- 観光スポット説明時: 基本情報、見どころ、営業時間/料金、アクセス、ベストタイミング
+- 具体的な数値（価格、時間、距離）を含め、箇条書きで読みやすく整理
+- 検索結果を機械的に羅列せず、自然な会話調で親しみやすく説明
+- 必ず日本語で回答
 
-1. **期間マッチングの最優先**
-   - ユーザーが「2泊3日」「1日」などの期間を指定している場合は、その期間に完全に一致する旅程プランを最優先で提案してください
-   - スコアが高い検索結果だけでなく、質問の期間（日数・泊数）に正確にマッチする情報を重視してください
-
-2. **旅程提案時の必須要素**（モデルコース・旅行プランを聞かれた場合）
-   - **日次スケジュール**: 各日の具体的な行動計画（午前・午後・夕方に分けて）
-   - **観光スポット**: 各スポットの名前、見どころ、所要時間、入場料
-   - **移動手段**: スポット間のアクセス方法と所要時間（タクシー、徒歩など）
-   - **食事の提案**: おすすめのレストランや地元料理
-   - **予算目安**: 宿泊費、食費、入場料、交通費の概算
-   - **実用的なTips**: ベストな訪問時間帯、注意事項、持ち物など
-
-3. **観光スポット説明時の必須要素**
-   - **基本情報**: 正式名称、場所、歴史的背景
-   - **見どころ**: 具体的な観光ポイント
-   - **実用情報**: 営業時間、入場料、所要時間
-   - **アクセス**: 行き方と所要時間
-   - **ベストタイミング**: おすすめの訪問時間帯や季節
-
-4. **回答の表現方法**
-   - 検索結果や参照情報を機械的に羅列せず、ユーザーに役立つ形で再構成してください
-   - 自然な会話調で、親しみやすく詳しく説明してください
-   - 具体的な数値（価格、時間、距離）を必ず含めてください
-   - 箇条書きや見出しを活用して読みやすく整理してください
-   - 必ず日本語で回答してください
-
-【ユーザーの質問】
+【質問】
 {user_prompt}
 
-【あなたの回答】"""
+【回答】"""
 
     return final_prompt
 
