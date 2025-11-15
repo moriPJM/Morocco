@@ -69,7 +69,8 @@ def call_openai_api(prompt_text: str) -> Optional[str]:
                         {"role": "user", "content": prompt_text}
                     ],
                     temperature=0.4,
-                    max_tokens=800
+                    max_tokens=600,  # 800→600に削減して応答速度向上
+                    timeout=15  # タイムアウト15秒を明示的に設定
                 )
             except Exception:
                 # Try a fallback model
@@ -81,7 +82,8 @@ def call_openai_api(prompt_text: str) -> Optional[str]:
                         {"role": "user", "content": prompt_text}
                     ],
                     temperature=0.4,
-                    max_tokens=800
+                    max_tokens=600,  # 800→600に削減
+                    timeout=15
                 )
             content = resp.choices[0].message.content if resp and resp.choices else None
             return content
@@ -2898,14 +2900,49 @@ def load_spots_data():
     return spots
 
 def init_ai_service():
-    """AI機能の初期化（高精度対応版）"""
+    """AI機能の初期化（高精度対応版・ベクトルストア事前ロード最適化）"""
     # 環境変数からAPIキーを安全に取得（表示しない）
     api_key = os.getenv('OPENAI_API_KEY')
+    kb = get_ai_knowledge_base()
+    
+    # ベクトルストアの事前ロード/構築（初回のみ、高速化のため）
+    if _AI_VECTOR_HAS_SBT and VectorStore and build_docs_from_kb:
+        if 'kb_vector_store' not in st.session_state or not st.session_state.get('kb_vector_store'):
+            try:
+                # 永続化されたインデックスがあればロード、なければ構築
+                import hashlib
+                kb_str = json.dumps(kb, sort_keys=True, ensure_ascii=False)
+                kb_hash = hashlib.sha256(kb_str.encode('utf-8')).hexdigest()[:16]
+                index_dir = os.path.join(os.path.dirname(__file__), 'data', 'ai_vector_index')
+                os.makedirs(index_dir, exist_ok=True)
+                index_path = os.path.join(index_dir, f'kb_index_{kb_hash}')
+                
+                try:
+                    # まず永続化されたインデックスをロード
+                    vs = VectorStore.load(index_path)
+                    logger.info(f"Loaded persisted vector index from {index_path}")
+                except FileNotFoundError:
+                    # なければ構築して保存
+                    logger.info("Building new vector index...")
+                    docs = build_docs_from_kb(kb)
+                    vs = VectorStore()
+                    vs.build(docs)
+                    try:
+                        vs.save(index_path)
+                        logger.info(f"Saved vector index to {index_path}")
+                    except Exception as e:
+                        logger.warning(f"Failed to save vector index: {e}")
+                
+                st.session_state['kb_vector_store'] = vs
+                st.session_state['kb_vector_store_built'] = True
+                logger.info("Vector store initialized and cached")
+            except Exception as e:
+                logger.warning(f"Vector store initialization failed: {e}")
     
     return {
         'available': bool(api_key),
         'api_key_masked': '****' if api_key else None,
-        'knowledge_base': get_ai_knowledge_base(),
+        'knowledge_base': kb,
         'fallback_responses': get_enhanced_fallback_responses(),
         # Vector search availability (sentence-transformers + sklearn must be installed)
         'vector_search_available': bool(_AI_VECTOR_HAS_SBT),
@@ -6005,93 +6042,71 @@ def show_ai_page(ai_service):
         st.session_state.messages.append({"role": "assistant", "content": response})
 
 def get_ai_response(prompt, ai_service):
-    """AI応答を生成（高精度フォールバック対応）"""
+    """AI応答を生成（高精度フォールバック対応・高速化版）"""
     if ai_service['available']:
         try:
             kb = ai_service['knowledge_base']
             retrieved_context = None
             
-            # summarize_snippets was promoted to module-level for reuse
-
-            # helper: highlight query terms (simple token match)
-            def _highlight_query(text: str, query: str) -> str:
-                try:
-                    tokens = set([t for t in re.split(r"\W+", query) if len(t) >= 2])
-                    if not tokens:
-                        return text
-                    # sort by length desc to avoid nested replacements
-                    toks = sorted(tokens, key=lambda x: -len(x))
-                    for t in toks:
-                        try:
-                            pattern = re.compile(re.escape(t), flags=re.IGNORECASE)
-                            text = pattern.sub(lambda m: f"**{m.group(0)}**", text)
-                        except re.error:
-                            continue
-                    return text
-                except Exception:
-                    return text
-
             # RAG: ベクトル検索が有効なら、インデックスを用いて上位文書を取得
             if ai_service.get('vector_search_available') and VectorStore and build_docs_from_kb:
                 try:
-                    # 既に構築済みなら再利用。なければオンデマンドで構築
+                    # init_ai_service で事前構築済みのベクトルストアを取得
                     vs = st.session_state.get('kb_vector_store')
-                    if not vs:
-                        docs = build_docs_from_kb(kb)
-                        vs = VectorStore()
-                        vs.build(docs)
-                        st.session_state['kb_vector_store'] = vs
-                        st.session_state['kb_vector_store_built'] = True
-                    # 検索
-                    results = vs.query(prompt, top_k=st.session_state.get('rag_top_k', 6))
-                    # Build structured snippets with source tags and highlighted matches
-                    snippets = []
-                    for r in results:
-                        text = (r.get('text') or '').strip()
-                        if not text:
-                            continue
-                        rid = r.get('id')
-                        score = r.get('score', 0.0)
-                        meta = r.get('meta', {})
-                        tag = meta.get('city') or meta.get('type') or 'doc'
-                        # truncate preserving start & end context if too long
-                        max_len = 600
-                        if len(text) > max_len:
-                            snippet = text[:400].rstrip() + ' ... ' + text[-150:].lstrip()
-                        else:
-                            snippet = text
-                        # highlight query tokens
-                        highlighted = _highlight_query(snippet, prompt)
-                        header = f"[SOURCE:{rid}|{tag}|score={score:.2f}]"
-                        snippets.append(f"{header}\n{highlighted}")
-                    if snippets:
-                        # separate snippet blocks for clarity
-                        raw_joined = '\n\n'.join(snippets[:12])
-                        # 要約してトークン削減（OpenAI が使えればそちらで要約を行い、なければ抽出的要約）
-                        try:
-                            summarized = summarize_snippets(snippets[:8], max_chars=st.session_state.get('summary_max_chars', 1000))
-                            if summarized:
-                                # Use summarized context (short) in prompt
-                                retrieved_context = summarized
+                    if vs:
+                        # 検索（高速化: top_kを削減してクエリ時間短縮）
+                        top_k = st.session_state.get('rag_top_k', 4)  # デフォルトを6→4に削減
+                        results = vs.query(prompt, top_k=top_k)
+                    
+                        # 高速化: ハイライト処理を簡素化し、要約をスキップして直接結合
+                        snippets = []
+                        for r in results[:top_k]:  # 確実に上限を適用
+                            text = (r.get('text') or '').strip()
+                            if not text:
+                                continue
+                            score = r.get('score', 0.0)
+                            meta = r.get('meta', {})
+                            tag = meta.get('city') or meta.get('type') or 'doc'
+                            # 最大長を短縮（600→400）してトークン削減
+                            max_len = 400
+                            if len(text) > max_len:
+                                snippet = text[:max_len].rstrip() + '...'
                             else:
-                                retrieved_context = raw_joined[:3000]
-                        except Exception as e:
-                            logger.warning(f"Snippet summarization failed, using raw snippets: {e}")
-                            retrieved_context = raw_joined[:3000]
+                                snippet = text
+                            header = f"[{tag}|score={score:.1f}]"  # 簡素化
+                            snippets.append(f"{header} {snippet}")
+                        
+                        if snippets:
+                            # 要約処理をスキップして直接結合（速度優先）
+                            # OpenAI APIを1回だけにしてレイテンシを削減
+                            retrieved_context = '\n'.join(snippets)
+                            # 最大トークン制限（約2000文字 = ~500トークン）
+                            if len(retrieved_context) > 2000:
+                                retrieved_context = retrieved_context[:2000] + '...'
+                    else:
+                        logger.info("Vector store not available in session")
                 except Exception as e:
                     logger.warning(f"RAG retrieval failed, continue without RAG: {e}")
 
             # 実際のOpenAI APIを使用する場合の高精度プロンプト
             enhanced_prompt = create_enhanced_prompt(prompt, kb, retrieved_context)
+            
+            # デバッグ用ログ
+            logger.info(f"Calling OpenAI API for prompt: {prompt[:50]}...")
             ai_text = call_openai_api(enhanced_prompt)
-            if ai_text:
+            
+            if ai_text and len(ai_text.strip()) > 10:
+                logger.info(f"OpenAI API returned response: {len(ai_text)} chars")
                 return ai_text
             else:
-                raise RuntimeError("Empty OpenAI response")
+                logger.warning(f"OpenAI API returned empty or short response: {ai_text}")
+                raise RuntimeError("Empty or insufficient OpenAI response")
         except Exception as e:
+            logger.error(f"API call failed: {str(e)}")
             st.error(f"API呼び出しエラー: {str(e)}")
     
     # 高精度フォールバック応答
+    logger.info("Using fallback response")
     return generate_smart_fallback_response(prompt, ai_service)
 
 def create_enhanced_prompt(user_prompt, knowledge_base, retrieved_context: Optional[str] = None):
@@ -6120,35 +6135,85 @@ def create_enhanced_prompt(user_prompt, knowledge_base, retrieved_context: Optio
 春（3-5月): {knowledge_base['travel_tips']['best_seasons']['spring']}
 夏（6-8月): {knowledge_base['travel_tips']['best_seasons']['summer']}
 秋（9-11月): {knowledge_base['travel_tips']['best_seasons']['autumn']}
-冬（12-2月): {knowledge_base['travel_tips']['best_seasons']['winter']}
-
-回答は以下の形式で提供してください：
-1. 簡潔な概要（1-2文）
-2. 具体的な詳細情報
-3. 実践的なアドバイス
-4. 関連する文化的背景
-5. 追加の推奨事項
-
-日本語で、親しみやすく、かつ専門的な情報を提供してください。"""
+冬（12-2月): {knowledge_base['travel_tips']['best_seasons']['winter']}"""
     
-    # 取得コンテキストがあれば追加
+    # 取得コンテキストがあれば追加（重要な指示を先頭に）
     context_block = ""
     if retrieved_context:
-        # Add explicit instruction about citations and use of the retrieved context
-        citation_instructions = (
-            "\n\n※以下の参照コンテキストを必ず参照して回答してください。"
-            " 参照可能な情報を用いる場合は、該当する出典を本文中に [SOURCE:<id>] の形式で明記してください。"
-            " 参照コンテキストに裏付けがない場合はその旨を伝え、不確かな情報は推測しないでください。"
-        )
-        context_block = f"\n\n【参照コンテキスト（検索結果）】\n{retrieved_context}{citation_instructions}"
+        context_block = f"""
 
-    return f"{system_prompt}{context_block}\n\n【ユーザーの質問】\n{user_prompt}"
+【参照情報】
+以下は検索結果から得られた補足情報です。これを参考にしつつ、自然な文章で回答してください。
+検索結果をそのまま表示せず、ユーザーの質問に対する分かりやすい回答を作成してください。
+
+{retrieved_context}
+
+---
+"""
+
+    # 最終的なプロンプト構成
+    final_prompt = f"""{system_prompt}{context_block}
+
+【重要な指示】
+- 検索結果や参照情報を羅列せず、質問に対する明確で具体的な回答を提供してください
+- 自然な会話調で、親しみやすく詳しく説明してください
+- 観光スポット、アクセス方法、文化的背景などを含めて総合的に案内してください
+- 必ず日本語で回答してください
+
+【ユーザーの質問】
+{user_prompt}
+
+【あなたの回答】"""
+
+    return final_prompt
 
 def generate_smart_fallback_response(prompt, ai_service):
-    """スマートフォールバック応答生成"""
+    """スマートフォールバック応答生成（RAG検索結果を活用）"""
     prompt_lower = prompt.lower()
     knowledge_base = ai_service['knowledge_base']
     fallback_responses = ai_service['fallback_responses']
+    
+    # RAG検索が利用可能なら、検索結果に基づいた応答を生成
+    if ai_service.get('vector_search_available') and VectorStore:
+        vs = st.session_state.get('kb_vector_store')
+        if vs:
+            try:
+                results = vs.query(prompt, top_k=3)
+                if results:
+                    # 検索結果から情報を抽出して自然な応答を生成
+                    response_parts = []
+                    response_parts.append(f"お問い合わせの「{prompt}」について、以下の情報をご案内します。\n")
+                    
+                    for i, r in enumerate(results, 1):
+                        text = (r.get('text') or '').strip()
+                        meta = r.get('meta', {})
+                        city = meta.get('city', '')
+                        type_info = meta.get('type', '')
+                        
+                        if text:
+                            # 最初の200文字程度を抜粋
+                            excerpt = text[:200].strip()
+                            if len(text) > 200:
+                                excerpt += '...'
+                            
+                            if city:
+                                response_parts.append(f"\n**{i}. {city}について**")
+                            elif type_info:
+                                response_parts.append(f"\n**{i}. {type_info}**")
+                            else:
+                                response_parts.append(f"\n**{i}. 関連情報**")
+                            
+                            response_parts.append(f"\n{excerpt}\n")
+                    
+                    response_parts.append("\n---")
+                    response_parts.append("\n💡 **補足情報**")
+                    response_parts.append(f"\n• 通貨: {knowledge_base['country_info']['currency']}")
+                    response_parts.append(f"\n• 主要言語: {', '.join(knowledge_base['country_info']['languages'][:2])}")
+                    response_parts.append("\n\nさらに詳しい情報が必要な場合は、具体的な観光地名や興味のあるテーマをお聞かせください。")
+                    
+                    return ''.join(response_parts)
+            except Exception as e:
+                logger.warning(f"RAG fallback failed: {e}")
     
     # キーワード分析
     keywords = analyze_prompt_keywords(prompt_lower)
