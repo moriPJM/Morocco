@@ -304,6 +304,7 @@ def get_background_image_css():
     
     # 背景画像ファイルのパス（優先順に検索）
     alternative_paths = [
+        os.path.join(os.path.dirname(__file__), "morocco_background.jpg"),
         r"c:\Users\user\Pictures\morocco_bg.jpg",
         r"c:\Users\user\Pictures\grjebasj2c5fmtqrxoh1.jpg",
     ]
