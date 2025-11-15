@@ -68,9 +68,9 @@ def call_openai_api(prompt_text: str) -> Optional[str]:
                         {"role": "system", "content": "You are a helpful assistant for Morocco travel."},
                         {"role": "user", "content": prompt_text}
                     ],
-                    temperature=0.4,
-                    max_tokens=600,  # 800→600に削減して応答速度向上
-                    timeout=15  # タイムアウト15秒を明示的に設定
+                    temperature=0.5,  # 0.4→0.5 より創造的で詳細な回答を生成
+                    max_tokens=1200,  # 600→1200 より長く詳細な回答を許可
+                    timeout=20  # 15→20秒 長い回答生成のためタイムアウト延長
                 )
             except Exception:
                 # Try a fallback model
@@ -81,9 +81,9 @@ def call_openai_api(prompt_text: str) -> Optional[str]:
                         {"role": "system", "content": "You are a helpful assistant for Morocco travel."},
                         {"role": "user", "content": prompt_text}
                     ],
-                    temperature=0.4,
-                    max_tokens=600,  # 800→600に削減
-                    timeout=15
+                    temperature=0.5,  # 0.4→0.5
+                    max_tokens=1200,  # 600→1200
+                    timeout=20  # 15→20秒
                 )
             content = resp.choices[0].message.content if resp and resp.choices else None
             return content
@@ -99,8 +99,8 @@ def call_openai_api(prompt_text: str) -> Optional[str]:
                         {"role": "system", "content": "You are a helpful assistant for Morocco travel."},
                         {"role": "user", "content": prompt_text}
                     ],
-                    temperature=0.4,
-                    max_tokens=800
+                    temperature=0.5,  # 0.4→0.5 より創造的で詳細な回答を生成
+                    max_tokens=1200  # 800→1200 より長く詳細な回答を許可
                 )
                 return completion.choices[0].message["content"]
             except Exception as e:
@@ -6058,31 +6058,45 @@ def get_ai_response(prompt, ai_service):
                         top_k = st.session_state.get('rag_top_k', 8)  # 4→8に増加（期間マッチング改善）
                         results = vs.query(prompt, top_k=top_k)
                     
-                        # 高速化: ハイライト処理を簡素化し、要約をスキップして直接結合
+                        # RAG検索結果を構造化して整形（AIが活用しやすい形式）
                         snippets = []
-                        for r in results[:top_k]:  # 確実に上限を適用
+                        for idx, r in enumerate(results[:top_k], 1):  # 確実に上限を適用
                             text = (r.get('text') or '').strip()
                             if not text:
                                 continue
                             score = r.get('score', 0.0)
                             meta = r.get('meta', {})
+                            doc_id = r.get('id', 'unknown')
+                            
+                            # ドキュメントタイプを特定
                             tag = meta.get('city') or meta.get('type') or 'doc'
-                            # 最大長を短縮（600→400）してトークン削減
-                            max_len = 400
+                            
+                            # 旅程データの場合は期間情報を抽出
+                            duration_info = ""
+                            if 'itinerary' in str(doc_id):
+                                import re
+                                # 期間情報を抽出（"期間: 2泊3日" など）
+                                duration_match = re.search(r'期間:\s*([^\n]+)', text)
+                                if duration_match:
+                                    duration_info = f" [{duration_match.group(1)}]"
+                            
+                            # より長い文章を許可（詳細な情報提供のため）
+                            max_len = 800  # 400→800に増加
                             if len(text) > max_len:
                                 snippet = text[:max_len].rstrip() + '...'
                             else:
                                 snippet = text
-                            header = f"[{tag}|score={score:.1f}]"  # 簡素化
-                            snippets.append(f"{header} {snippet}")
+                            
+                            # 構造化されたヘッダー（AIが情報源を理解しやすい）
+                            header = f"\n【検索結果 {idx}】類似度: {score:.1%} | 情報源: {tag}{duration_info}"
+                            snippets.append(f"{header}\n{snippet}\n")
                         
                         if snippets:
-                            # 要約処理をスキップして直接結合（速度優先）
-                            # OpenAI APIを1回だけにしてレイテンシを削減
-                            retrieved_context = '\n'.join(snippets)
-                            # 最大トークン制限（約2000文字 = ~500トークン）
-                            if len(retrieved_context) > 2000:
-                                retrieved_context = retrieved_context[:2000] + '...'
+                            # 構造化されたコンテキストを作成
+                            retrieved_context = '\n---\n'.join(snippets)
+                            # 最大トークン制限を拡大（詳細な情報提供のため）
+                            if len(retrieved_context) > 4000:  # 2000→4000に拡大
+                                retrieved_context = retrieved_context[:4000] + '...'
                     else:
                         logger.info("Vector store not available in session")
                 except Exception as e:
@@ -6154,13 +6168,33 @@ def create_enhanced_prompt(user_prompt, knowledge_base, retrieved_context: Optio
     # 最終的なプロンプト構成
     final_prompt = f"""{system_prompt}{context_block}
 
-【重要な指示】
-- 検索結果や参照情報を羅列せず、質問に対する明確で具体的な回答を提供してください
-- ユーザーが「2泊3日」「1日」などの期間を指定している場合は、その期間に完全に一致する旅程プランを最優先で提案してください
-- スコアが高い検索結果だけでなく、質問の期間（日数・泊数）に正確にマッチする情報を重視してください
-- 自然な会話調で、親しみやすく詳しく説明してください
-- 観光スポット、アクセス方法、文化的背景などを含めて総合的に案内してください
-- 必ず日本語で回答してください
+【回答スタイルと重要な指示】
+
+1. **期間マッチングの最優先**
+   - ユーザーが「2泊3日」「1日」などの期間を指定している場合は、その期間に完全に一致する旅程プランを最優先で提案してください
+   - スコアが高い検索結果だけでなく、質問の期間（日数・泊数）に正確にマッチする情報を重視してください
+
+2. **旅程提案時の必須要素**（モデルコース・旅行プランを聞かれた場合）
+   - **日次スケジュール**: 各日の具体的な行動計画（午前・午後・夕方に分けて）
+   - **観光スポット**: 各スポットの名前、見どころ、所要時間、入場料
+   - **移動手段**: スポット間のアクセス方法と所要時間（タクシー、徒歩など）
+   - **食事の提案**: おすすめのレストランや地元料理
+   - **予算目安**: 宿泊費、食費、入場料、交通費の概算
+   - **実用的なTips**: ベストな訪問時間帯、注意事項、持ち物など
+
+3. **観光スポット説明時の必須要素**
+   - **基本情報**: 正式名称、場所、歴史的背景
+   - **見どころ**: 具体的な観光ポイント
+   - **実用情報**: 営業時間、入場料、所要時間
+   - **アクセス**: 行き方と所要時間
+   - **ベストタイミング**: おすすめの訪問時間帯や季節
+
+4. **回答の表現方法**
+   - 検索結果や参照情報を機械的に羅列せず、ユーザーに役立つ形で再構成してください
+   - 自然な会話調で、親しみやすく詳しく説明してください
+   - 具体的な数値（価格、時間、距離）を必ず含めてください
+   - 箇条書きや見出しを活用して読みやすく整理してください
+   - 必ず日本語で回答してください
 
 【ユーザーの質問】
 {user_prompt}
