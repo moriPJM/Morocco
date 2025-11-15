@@ -138,6 +138,9 @@ class VectorStore:
         """Query the store and return top_k nearest documents with similarity scores (0..1).
 
         Returns list of dict: { 'id', 'score', 'text' (optional in meta), 'meta' }
+        
+        This method implements smart re-ranking to boost results where:
+        - Duration keywords (e.g., "2泊3日", "1日", "3泊4日") exactly match between query and document
         """
         if self._nn is None or self._embeddings is None:
             raise RuntimeError("Vector store not built. Call build(docs) first.")
@@ -154,6 +157,48 @@ class VectorStore:
                 'meta': self._metas[int(idx)],
                 'text': self._texts[int(idx)]
             })
+        
+        # Smart re-ranking: Extract duration keywords from query
+        import re
+        duration_patterns = [
+            r'(\d+)泊(\d+)日',  # e.g., 2泊3日
+            r'(\d+)日間',       # e.g., 3日間
+            r'(\d+)日',         # e.g., 1日
+        ]
+        query_durations = set()
+        for pattern in duration_patterns:
+            matches = re.findall(pattern, query_text)
+            for match in matches:
+                if isinstance(match, tuple):
+                    query_durations.add(''.join(match))
+                else:
+                    query_durations.add(match)
+        
+        # If duration keywords found in query, boost matching docs
+        if query_durations:
+            for result in results:
+                doc_text = result.get('text', '')
+                doc_id = str(result.get('id', ''))
+                
+                # Check for duration match in document text or ID
+                doc_durations = set()
+                for pattern in duration_patterns:
+                    matches = re.findall(pattern, doc_text + ' ' + doc_id)
+                    for match in matches:
+                        if isinstance(match, tuple):
+                            doc_durations.add(''.join(match))
+                        else:
+                            doc_durations.add(match)
+                
+                # Boost score if duration matches
+                if query_durations & doc_durations:
+                    result['score'] = min(result['score'] + 0.3, 1.0)
+                    result['boosted'] = True
+                    logger.info(f"Boosted doc {doc_id} from {result['score']-0.3:.3f} to {result['score']:.3f} (duration match)")
+        
+        # Re-sort by boosted scores
+        results.sort(key=lambda x: x['score'], reverse=True)
+        
         return results
 
 

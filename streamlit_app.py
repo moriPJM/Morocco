@@ -6054,8 +6054,8 @@ def get_ai_response(prompt, ai_service):
                     # init_ai_service で事前構築済みのベクトルストアを取得
                     vs = st.session_state.get('kb_vector_store')
                     if vs:
-                        # 検索（高速化: top_kを削減してクエリ時間短縮）
-                        top_k = st.session_state.get('rag_top_k', 4)  # デフォルトを6→4に削減
+                        # 検索（精度優先: top_kを8に増やして複数候補をAIに提供）
+                        top_k = st.session_state.get('rag_top_k', 8)  # 4→8に増加（期間マッチング改善）
                         results = vs.query(prompt, top_k=top_k)
                     
                         # 高速化: ハイライト処理を簡素化し、要約をスキップして直接結合
@@ -6156,6 +6156,8 @@ def create_enhanced_prompt(user_prompt, knowledge_base, retrieved_context: Optio
 
 【重要な指示】
 - 検索結果や参照情報を羅列せず、質問に対する明確で具体的な回答を提供してください
+- ユーザーが「2泊3日」「1日」などの期間を指定している場合は、その期間に完全に一致する旅程プランを最優先で提案してください
+- スコアが高い検索結果だけでなく、質問の期間（日数・泊数）に正確にマッチする情報を重視してください
 - 自然な会話調で、親しみやすく詳しく説明してください
 - 観光スポット、アクセス方法、文化的背景などを含めて総合的に案内してください
 - 必ず日本語で回答してください
