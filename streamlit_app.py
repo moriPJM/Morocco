@@ -5995,30 +5995,108 @@ def show_ai_page(ai_service):
     if "messages" not in st.session_state:
         st.session_state.messages = []
     
+    # ウェルカムメッセージ（会話開始前のみ）
+    if len(st.session_state.messages) == 0:
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                    padding: 2rem; 
+                    border-radius: 15px; 
+                    color: white; 
+                    margin-bottom: 2rem;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <h2 style="margin: 0 0 1rem 0;">🤖 モロッコ旅行AI アシスタント</h2>
+            <p style="font-size: 1.1rem; margin: 0; opacity: 0.95;">
+                モロッコ観光の専門知識を持つAIがあなたの旅行計画をサポートします。<br>
+                旅程プラン、観光スポット、グルメ、文化など、何でもお気軽にご質問ください！
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+    
     # チャット履歴の表示
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
     
-    # おすすめ質問
-    st.subheader("💡 おすすめの質問")
-    suggestions = [
-        "マラケシュのおすすめ観光地を教えて",
-        "カサブランカで必見のスポットは？",
-        "フェズの歴史について教えて",
-        "サハラ砂漠ツアーのアドバイスをください",
-        "モロッコ料理のおすすめは？"
-    ]
+    # おすすめ質問セクション（会話が空の場合のみ表示）
+    if len(st.session_state.messages) == 0:
+        st.markdown("---")
+        st.markdown("### 💡 よくある質問から選ぶ")
+        st.markdown("##### 🗺️ 旅程プラン")
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("📅 マラケシュ2泊3日のモデルコース", key="sug_m2n3d", use_container_width=True):
+                suggestion = "マラケシュ2泊3日のモデルコースを提案して"
+                st.session_state.messages.append({"role": "user", "content": suggestion})
+                response = get_ai_response(suggestion, ai_service)
+                st.session_state.messages.append({"role": "assistant", "content": response})
+                st.rerun()
+        with col2:
+            if st.button("🌅 サハラ砂漠ツアーの詳細", key="sug_sahara", use_container_width=True):
+                suggestion = "サハラ砂漠ツアーのアドバイスをください"
+                st.session_state.messages.append({"role": "user", "content": suggestion})
+                response = get_ai_response(suggestion, ai_service)
+                st.session_state.messages.append({"role": "assistant", "content": response})
+                st.rerun()
+        
+        st.markdown("##### 🏛️ 都市情報")
+        col3, col4, col5 = st.columns(3)
+        with col3:
+            if st.button("🕌 マラケシュの見どころ", key="sug_marrakech", use_container_width=True):
+                suggestion = "マラケシュのおすすめ観光地を教えて"
+                st.session_state.messages.append({"role": "user", "content": suggestion})
+                response = get_ai_response(suggestion, ai_service)
+                st.session_state.messages.append({"role": "assistant", "content": response})
+                st.rerun()
+        with col4:
+            if st.button("🏙️ カサブランカの魅力", key="sug_casa", use_container_width=True):
+                suggestion = "カサブランカで必見のスポットは？"
+                st.session_state.messages.append({"role": "user", "content": suggestion})
+                response = get_ai_response(suggestion, ai_service)
+                st.session_state.messages.append({"role": "assistant", "content": response})
+                st.rerun()
+        with col5:
+            if st.button("📜 フェズの歴史", key="sug_fez", use_container_width=True):
+                suggestion = "フェズの歴史について教えて"
+                st.session_state.messages.append({"role": "user", "content": suggestion})
+                response = get_ai_response(suggestion, ai_service)
+                st.session_state.messages.append({"role": "assistant", "content": response})
+                st.rerun()
+        
+        st.markdown("##### 🍽️ グルメ・文化")
+        col6, col7 = st.columns(2)
+        with col6:
+            if st.button("🥘 モロッコ料理のおすすめ", key="sug_food", use_container_width=True):
+                suggestion = "モロッコ料理のおすすめは？"
+                st.session_state.messages.append({"role": "user", "content": suggestion})
+                response = get_ai_response(suggestion, ai_service)
+                st.session_state.messages.append({"role": "assistant", "content": response})
+                st.rerun()
+        with col7:
+            if st.button("🌡️ ベストシーズンはいつ？", key="sug_season", use_container_width=True):
+                suggestion = "モロッコのベストシーズンを教えて"
+                st.session_state.messages.append({"role": "user", "content": suggestion})
+                response = get_ai_response(suggestion, ai_service)
+                st.session_state.messages.append({"role": "assistant", "content": response})
+                st.rerun()
+        
+        st.markdown("---")
+        st.markdown("### ✍️ または、自由に質問を入力してください")
+        st.caption("💬 例: 「3日間でフェズとシャウエンを巡るプラン」「モロッコの治安について」「お土産のおすすめ」など")
+    else:
+        # 会話がある場合はクリアボタンと追加質問のヒントを表示
+        st.markdown("---")
+        col_hint, col_clear = st.columns([3, 1])
+        with col_hint:
+            st.info("💡 **追加質問のヒント**: より詳しい情報が必要な場合は、「もっと詳しく」「具体例を教えて」などと続けて質問できます")
+        with col_clear:
+            if st.button("🗑️ 会話をクリア", key="clear_chat", use_container_width=True, type="secondary"):
+                st.session_state.messages = []
+                st.rerun()
+        st.markdown("---")
     
-    for i, suggestion in enumerate(suggestions):
-        if st.button(suggestion, key=f"suggestion_{i}", use_container_width=True):
-            st.session_state.messages.append({"role": "user", "content": suggestion})
-            response = get_ai_response(suggestion, ai_service)
-            st.session_state.messages.append({"role": "assistant", "content": response})
-            st.rerun()
-    
-    # ユーザー入力（入力検証付き）
-    if prompt_raw := st.chat_input("モロッコについて何でも聞いてください！"):
+    # ユーザー入力（入力検証付き）- プレースホルダーを改善
+    input_placeholder = "🤔 モロッコについて何でも質問してください... (例: マラケシュ2泊3日のモデルコース、フェズの観光スポット、モロッコ料理など)"
+    if prompt_raw := st.chat_input(input_placeholder):
         # 入力検証とサニタイゼーション
         is_valid, validated_prompt = validate_user_input(prompt_raw, max_length=500, min_length=1)
         
