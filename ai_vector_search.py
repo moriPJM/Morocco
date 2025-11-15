@@ -217,4 +217,63 @@ def build_docs_from_kb(kb: Dict) -> List[Dict]:
                 doc_id = f'city::{city}::p{idx}' if len(paragraphs)>1 else f'city::{city}'
                 # add a short meta to help tagging
                 docs.append({'id': doc_id, 'text': para, 'meta': {'type': 'city', 'city': city, 'part': idx}})
+    
+    # itineraries (旅程データ) - 概要と詳細を分離して検索精度向上
+    if 'itineraries' in kb and isinstance(kb['itineraries'], list):
+        for itin in kb['itineraries']:
+            if not isinstance(itin, dict):
+                continue
+            itin_id = itin.get('id', 'unknown')
+            city = itin.get('city', '')
+            duration = itin.get('duration', '')
+            
+            # ドキュメント1: タイトル・サマリー・主要情報（短く重要な情報を凝縮）
+            # 期間を強調するため最初に配置
+            summary_parts = []
+            if 'duration' in itin:
+                summary_parts.append(f"期間: {duration}")
+            if 'title' in itin:
+                summary_parts.append(f"{itin['title']}")
+            if 'summary' in itin:
+                summary_parts.append(itin['summary'])
+            if 'best_season' in itin:
+                summary_parts.append(f"ベストシーズン: {itin['best_season']}")
+            if 'budget_range' in itin:
+                summary_parts.append(f"予算: {itin['budget_range']}")
+            
+            # ハイライトも概要に含める
+            if 'highlights' in itin and isinstance(itin['highlights'], list):
+                summary_parts.append("主な内容: " + ", ".join(itin['highlights']))
+            
+            summary_text = '\n'.join(summary_parts)
+            docs.append({
+                'id': f'itinerary::{itin_id}::summary',
+                'text': summary_text,
+                'meta': {'type': 'itinerary_summary', 'city': city, 'duration': duration, 'full_id': itin_id}
+            })
+            
+            # ドキュメント2-N: 日程詳細（日ごとに分割）
+            for day_key in ['day1', 'day2', 'day3', 'day4']:
+                if day_key in itin and isinstance(itin[day_key], dict):
+                    day_info = itin[day_key]
+                    day_parts = [f"{itin.get('title', '')} - {day_info.get('title', day_key)}"]
+                    
+                    # 各時間帯の活動
+                    for time_key in ['morning', 'afternoon', 'evening']:
+                        if time_key in day_info and isinstance(day_info[time_key], dict):
+                            time_info = day_info[time_key]
+                            if 'activities' in time_info and isinstance(time_info['activities'], list):
+                                for act in time_info['activities']:
+                                    if isinstance(act, dict) and 'spot' in act:
+                                        desc = act.get('description', '')
+                                        day_parts.append(f"{act['spot']}: {desc}")
+                    
+                    if len(day_parts) > 1:  # タイトル以外のコンテンツがある場合のみ
+                        day_text = '\n'.join(day_parts)
+                        docs.append({
+                            'id': f'itinerary::{itin_id}::{day_key}',
+                            'text': day_text,
+                            'meta': {'type': 'itinerary_day', 'city': city, 'duration': duration, 'day': day_key, 'full_id': itin_id}
+                        })
+    
     return docs
