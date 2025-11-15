@@ -6012,6 +6012,23 @@ def show_ai_page(ai_service):
         </div>
         """, unsafe_allow_html=True)
     
+    # 保留中の質問を処理（ボタンからの質問）
+    if 'pending_question' in st.session_state and st.session_state['pending_question']:
+        prompt = st.session_state['pending_question']
+        st.session_state['pending_question'] = None  # クリア
+        
+        # ユーザーメッセージを追加
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        
+        # AI応答を生成（ストリーミング）
+        full_response = ""
+        for chunk in get_ai_response_stream(prompt, ai_service):
+            full_response += chunk
+        
+        # アシスタントメッセージを追加
+        st.session_state.messages.append({"role": "assistant", "content": full_response})
+        st.rerun()
+    
     # チャット履歴の表示
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
@@ -6026,16 +6043,13 @@ def show_ai_page(ai_service):
         with col1:
             if st.button("📅 マラケシュ2泊3日のモデルコース", key="sug_m2n3d", use_container_width=True):
                 suggestion = "マラケシュ2泊3日のモデルコースを提案して"
-                st.session_state.messages.append({"role": "user", "content": suggestion})
-                response = get_ai_response(suggestion, ai_service)
-                st.session_state.messages.append({"role": "assistant", "content": response})
+                # セッション状態に質問を保存してリロード（入力欄と同じ処理）
+                st.session_state['pending_question'] = suggestion
                 st.rerun()
         with col2:
             if st.button("🌅 サハラ砂漠ツアーの詳細", key="sug_sahara", use_container_width=True):
                 suggestion = "サハラ砂漠ツアーのアドバイスをください"
-                st.session_state.messages.append({"role": "user", "content": suggestion})
-                response = get_ai_response(suggestion, ai_service)
-                st.session_state.messages.append({"role": "assistant", "content": response})
+                st.session_state['pending_question'] = suggestion
                 st.rerun()
         
         st.markdown("##### 🏛️ 都市情報")
@@ -6043,23 +6057,17 @@ def show_ai_page(ai_service):
         with col3:
             if st.button("🕌 マラケシュの見どころ", key="sug_marrakech", use_container_width=True):
                 suggestion = "マラケシュのおすすめ観光地を教えて"
-                st.session_state.messages.append({"role": "user", "content": suggestion})
-                response = get_ai_response(suggestion, ai_service)
-                st.session_state.messages.append({"role": "assistant", "content": response})
+                st.session_state['pending_question'] = suggestion
                 st.rerun()
         with col4:
             if st.button("🏙️ カサブランカの魅力", key="sug_casa", use_container_width=True):
                 suggestion = "カサブランカで必見のスポットは？"
-                st.session_state.messages.append({"role": "user", "content": suggestion})
-                response = get_ai_response(suggestion, ai_service)
-                st.session_state.messages.append({"role": "assistant", "content": response})
+                st.session_state['pending_question'] = suggestion
                 st.rerun()
         with col5:
             if st.button("📜 フェズの歴史", key="sug_fez", use_container_width=True):
                 suggestion = "フェズの歴史について教えて"
-                st.session_state.messages.append({"role": "user", "content": suggestion})
-                response = get_ai_response(suggestion, ai_service)
-                st.session_state.messages.append({"role": "assistant", "content": response})
+                st.session_state['pending_question'] = suggestion
                 st.rerun()
         
         st.markdown("##### 🍽️ グルメ・文化")
@@ -6067,16 +6075,12 @@ def show_ai_page(ai_service):
         with col6:
             if st.button("🥘 モロッコ料理のおすすめ", key="sug_food", use_container_width=True):
                 suggestion = "モロッコ料理のおすすめは？"
-                st.session_state.messages.append({"role": "user", "content": suggestion})
-                response = get_ai_response(suggestion, ai_service)
-                st.session_state.messages.append({"role": "assistant", "content": response})
+                st.session_state['pending_question'] = suggestion
                 st.rerun()
         with col7:
             if st.button("🌡️ ベストシーズンはいつ？", key="sug_season", use_container_width=True):
                 suggestion = "モロッコのベストシーズンを教えて"
-                st.session_state.messages.append({"role": "user", "content": suggestion})
-                response = get_ai_response(suggestion, ai_service)
-                st.session_state.messages.append({"role": "assistant", "content": response})
+                st.session_state['pending_question'] = suggestion
                 st.rerun()
         
         st.markdown("---")
